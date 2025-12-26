@@ -7,7 +7,8 @@ import (
 )
 
 type TodoRepository interface {
-	Create(ctx context.Context, todo *entity.TodoItem) error
+	Create(ctx context.Context, todo *entity.TodoItemEntity) error
+	GetTodoByID(ctx context.Context, id int) (*entity.TodoItemEntity, error)
 }
 
 type FileRepository interface {
@@ -20,5 +21,5 @@ type S3Repository interface {
 }
 
 type RedisStreamRepository interface {
-	PublishTodo(ctx context.Context, todo *entity.TodoItem) error
+	PublishTodo(ctx context.Context, todo *entity.TodoItemEntity) error
 }
