@@ -2,62 +2,82 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
-	"todo-service/internal/handler"
+	"todo-service/internal/domain/entity"
+	"todo-service/internal/infrastructure/gqlgen/graph"
 	"todo-service/internal/infrastructure/migration"
 	"todo-service/internal/infrastructure/repository"
 	"todo-service/internal/infrastructure/storage"
 	"todo-service/internal/infrastructure/stream"
 	"todo-service/internal/usecase"
 
+	"git.ice.global/packages/hitrix"
+	"git.ice.global/packages/hitrix/pkg/middleware"
+	"git.ice.global/packages/hitrix/service"
+	"git.ice.global/packages/hitrix/service/component/app"
+	"git.ice.global/packages/hitrix/service/registry"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/lru"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+	"github.com/vektah/gqlparser/v2/ast"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/gorilla/mux"
 )
 
 func cmd() {
+	// dsn := fmt.Sprintf(
+	// 	"%s:%s@tcp(%s:%s)/%s?parseTime=true",
+	// 	os.Getenv("DB_USER"),
+	// 	os.Getenv("DB_PASSWORD"),
+	// 	os.Getenv("DB_HOST"),
+	// 	os.Getenv("DB_PORT"),
+	// 	os.Getenv("DB_NAME"),
+	// )
 
-	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
-	)
+	// db, err := sql.Open("mysql", dsn)
+	// if err != nil {
+	// 	log.Fatal().Err(err).Msg("Failed to open database")
+	// }
+	// defer db.Close()
 
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to open database")
-
-	}
-	defer db.Close()
-
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	// db.SetMaxOpenConns(25)
+	// db.SetMaxIdleConns(5)
+	// db.SetConnMaxLifetime(5 * time.Minute)
 
 	// Retry connection with exponential backoff
-	if err := waitForDatabase(db, 30*time.Second); err != nil {
-		log.Fatal().Err(err).Msg("Failed to connect to database")
-	}
-	log.Info().Msg("Database connected successfully")
+	// if err := waitForDatabase(db, 30*time.Second); err != nil {
+	// 	log.Fatal().Err(err).Msg("Failed to connect to database")
+	// }
+	// log.Info().Msg("Database connected successfully")
+
+	// migrationDSN := fmt.Sprintf(
+	// 	"mysql://%s:%s@tcp(%s:%s)/%s",
+	// 	os.Getenv("DB_USER"),
+	// 	os.Getenv("DB_PASSWORD"),
+	// 	os.Getenv("DB_HOST"),
+	// 	os.Getenv("DB_PORT"),
+	// 	os.Getenv("DB_NAME"),
+	// )
 
 	migrationDSN := fmt.Sprintf(
 		"mysql://%s:%s@tcp(%s:%s)/%s",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
+		"root",
+		"password",
+		"localhost",
+		"3306",
+		"hitrix_test",
 	)
+
+	// migrationDSN := "root:password@tcp(localhost:3306)/hitrix_test?charset=utf8mb4&parseTime=True"
 
 	migrationsPath := "./migrations"
 	if _, err := os.Stat(migrationsPath); os.IsNotExist(err) {
@@ -71,17 +91,48 @@ func cmd() {
 	}
 	log.Info().Msg("Migrations completed successfully")
 
+	// Initialize hitrix server
+	s, deferFunc := hitrix.New(
+		"todo-app", "your secret",
+	).RegisterDIGlobalService(
+		registry.ServiceProviderErrorLogger(),
+		registry.ServiceProviderConfigDirectory("./config"),
+		registry.ServiceProviderOrmRegistry(entity.Init),
+		registry.ServiceProviderOrmEngine(),
+		registry.ServiceProviderJWT(),
+	).RegisterDIRequestService(
+		registry.ServiceProviderOrmEngineForContext(true),
+	).RegisterRedisPools(&app.RedisPools{Persistent: "persistent"}).
+		Build()
+
+	defer deferFunc()
+
+	type ConfigI struct {
+		MySQL string
+	}
+
+	c := &ConfigI{}
+
+	configService := service.DI().Config()
+	fmt.Printf("@@@@@@@@@@@@@%+v\n", configService)
+
+	fmt.Printf("ConfigI %+v\n", c)
+
+	ormengine := service.DI().OrmEngine()
+
 	// Initialize repositories
-	todoRepo := repository.NewTodoRepository(db)
-	fileRepo := repository.NewFileRepository(db)
+	todoRepo := repository.NewTodoRepository(ormengine)
+	// fileRepo := repository.NewFileRepository(db)
 
 	// Get S3 configuration
-	s3Bucket := os.Getenv("S3_BUCKET")
+	// s3Bucket := os.Getenv("S3_BUCKET")
+	s3Bucket := "todo-bucket"
 	if s3Bucket == "" {
 		s3Bucket = "todos-bucket" // default
 	}
 
-	s3Endpoint := os.Getenv("S3_ENDPOINT")
+	// s3Endpoint := os.Getenv("S3_ENDPOINT")
+	s3Endpoint := " http://localstack:4566"
 	if s3Bucket == "" || s3Endpoint == "" {
 		log.Fatal().Msg("S3_BUCKET or S3_ENDPOINT not set")
 	}
@@ -97,56 +148,97 @@ func cmd() {
 
 	// Initialize use cases
 	todoUC := usecase.NewTodoUseCase(todoRepo, s3Repo, redisRepo, os.Getenv("S3_BUCKET"))
-	fileUC := usecase.NewFileUseCase(fileRepo, s3Repo, s3Bucket)
-
-	// Initialize handlers
-	h := handler.NewHandler(todoUC, fileUC)
-
-	// Setup routes
-	r := mux.NewRouter()
-	handler.RegisterRoutes(r, h)
+	// fileUC := usecase.NewFileUseCase(fileRepo, s3Repo, s3Bucket)
 
 	APP_PORT := os.Getenv("APP_PORT")
-
 	if APP_PORT == "" {
-		log.Fatal().Msg("APP_PORT not set")
+		APP_PORT = "8080" // default port
 	}
 
-	srv := &http.Server{Addr: fmt.Sprintf(":%s", APP_PORT), Handler: r}
+	// Convert port to uint for hitrix
+	portNum, err := strconv.ParseUint(APP_PORT, 10, 32)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Invalid APP_PORT value")
+	}
 
-	go func() {
-		log.Info().Msgf("Server starting on :%s", APP_PORT)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal().Err(err).Msg("Server error")
-		}
-	}()
+	// Setup GraphQL schema
+	executableSchema := graph.NewExecutableSchema(graph.Config{
+		Resolvers: &graph.Resolver{
+			TodoUseCase: todoUC,
+			// FileUseCase: fileUC,
+		},
+	})
 
-	// Graceful shutdown
+	// Setup graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Start server in goroutine
+	go func() {
+		log.Info().Msgf("GraphQL server starting on :%s", APP_PORT)
+		log.Info().Msgf("GraphQL Playground available at http://localhost:%s/playground", APP_PORT)
+
+		s.RunServer(uint(portNum), executableSchema, func(ginEngine *gin.Engine) {
+			middleware.Cors(ginEngine)
+
+			// Print all registered routes
+			for _, route := range ginEngine.Routes() {
+				log.Info().Msgf("Route: %s %s", route.Method, route.Path)
+			}
+
+			ginEngine.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/query")))
+
+			ginEngine.GET("/health", func(c *gin.Context) {
+				c.JSON(200, gin.H{"status": "healthy"})
+			})
+		}, gqlSetup)
+
+	}()
+
+	// Wait for shutdown signal
 	<-quit
+	log.Info().Msg("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal().Err(err).Msg("Server shutdown error")
+
+	// Add any cleanup logic here if needed
+	select {
+	case <-ctx.Done():
+		log.Info().Msg("Shutdown timeout exceeded")
+	default:
+		log.Info().Msg("Server shutdown successfully")
 	}
-	log.Info().Msg("Server shutdown successfully")
 }
 
 // waitForDatabase retries database connection with exponential backoff
-func waitForDatabase(db *sql.DB, timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	var lastErr error
+// func waitForDatabase(db *sql.DB, timeout time.Duration) error {
+// 	deadline := time.Now().Add(timeout)
+// 	var lastErr error
 
-	for time.Now().Before(deadline) {
-		if err := db.Ping(); err == nil {
-			return nil
-		} else {
-			lastErr = err
-			time.Sleep(2 * time.Second)
-		}
-	}
+// 	for time.Now().Before(deadline) {
+// 		if err := db.Ping(); err == nil {
+// 			return nil
+// 		} else {
+// 			lastErr = err
+// 			time.Sleep(2 * time.Second)
+// 		}
+// 	}
 
-	return fmt.Errorf("timeout waiting for database: %w", lastErr)
+// 	return fmt.Errorf("timeout waiting for database: %w", lastErr)
+// }
+
+func gqlSetup(srv *handler.Server) {
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.MultipartForm{})
+
+	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
+
+	srv.Use(extension.Introspection{})
+	srv.Use(extension.AutomaticPersistedQuery{
+		Cache: lru.New[string](100),
+	})
+
 }

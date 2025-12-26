@@ -43,7 +43,7 @@ func (h *Handler) CreateTodo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	todo, err := h.todoUC.CreateTodo(r.Context(), &entity.TodoItem{
+	todo, err := h.todoUC.CreateTodo(r.Context(), &entity.TodoItemEntity{
 		Description: req.Description,
 		DueDate:     due,
 		FileID:      req.FileID,
