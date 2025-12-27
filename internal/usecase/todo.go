@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"todo-service/internal/domain/entity"
-	iface "todo-service/internal/domain/interface"
+	iface "todo-service/internal/interface"
 	// "github.com/google/uuid"
 )
 

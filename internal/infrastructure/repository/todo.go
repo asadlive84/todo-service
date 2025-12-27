@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"todo-service/internal/domain/entity"
-	iface "todo-service/internal/domain/interface"
+	iface "todo-service/internal/interface"
 
 	"git.ice.global/packages/beeorm/v4"
 )
