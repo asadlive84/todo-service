@@ -62,8 +62,16 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Todo  func(childComplexity int, id string) int
-		Todos func(childComplexity int) int
+		SearchTodos func(childComplexity int, query string, offset int32, limit int32) int
+		Todo        func(childComplexity int, id string) int
+		Todos       func(childComplexity int) int
+	}
+
+	SearchResult struct {
+		Limit   func(childComplexity int) int
+		Offset  func(childComplexity int) int
+		Results func(childComplexity int) int
+		Total   func(childComplexity int) int
 	}
 
 	Todo struct {
@@ -82,6 +90,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Todos(ctx context.Context) ([]*model.Todo, error)
 	Todo(ctx context.Context, id string) (*model.Todo, error)
+	SearchTodos(ctx context.Context, query string, offset int32, limit int32) (*model.SearchResult, error)
 }
 
 type executableSchema struct {
@@ -141,6 +150,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.CreateTodo(childComplexity, args["input"].(model.CreateTodoInput)), true
 
+	case "Query.searchTodos":
+		if e.complexity.Query.SearchTodos == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchTodos_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SearchTodos(childComplexity, args["query"].(string), args["offset"].(int32), args["limit"].(int32)), true
 	case "Query.todo":
 		if e.complexity.Query.Todo == nil {
 			break
@@ -158,6 +178,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Todos(childComplexity), true
+
+	case "SearchResult.limit":
+		if e.complexity.SearchResult.Limit == nil {
+			break
+		}
+
+		return e.complexity.SearchResult.Limit(childComplexity), true
+	case "SearchResult.offset":
+		if e.complexity.SearchResult.Offset == nil {
+			break
+		}
+
+		return e.complexity.SearchResult.Offset(childComplexity), true
+	case "SearchResult.results":
+		if e.complexity.SearchResult.Results == nil {
+			break
+		}
+
+		return e.complexity.SearchResult.Results(childComplexity), true
+	case "SearchResult.total":
+		if e.complexity.SearchResult.Total == nil {
+			break
+		}
+
+		return e.complexity.SearchResult.Total(childComplexity), true
 
 	case "Todo.createdAt":
 		if e.complexity.Todo.CreatedAt == nil {
@@ -340,6 +385,27 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_searchTodos_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "query", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["query"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalNInt2int32)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalNInt2int32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
 	return args, nil
 }
 
@@ -687,6 +753,57 @@ func (ec *executionContext) fieldContext_Query_todo(ctx context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_searchTodos(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_searchTodos,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().SearchTodos(ctx, fc.Args["query"].(string), fc.Args["offset"].(int32), fc.Args["limit"].(int32))
+		},
+		nil,
+		ec.marshalNSearchResult2ᚖtodoᚑserviceᚋinternalᚋinfrastructureᚋgqlgenᚋgraphᚋmodelᚐSearchResult,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_searchTodos(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "results":
+				return ec.fieldContext_SearchResult_results(ctx, field)
+			case "total":
+				return ec.fieldContext_SearchResult_total(ctx, field)
+			case "offset":
+				return ec.fieldContext_SearchResult_offset(ctx, field)
+			case "limit":
+				return ec.fieldContext_SearchResult_limit(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SearchResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_searchTodos_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -790,6 +907,136 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchResult_results(ctx context.Context, field graphql.CollectedField, obj *model.SearchResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SearchResult_results,
+		func(ctx context.Context) (any, error) {
+			return obj.Results, nil
+		},
+		nil,
+		ec.marshalNTodo2ᚕᚖtodoᚑserviceᚋinternalᚋinfrastructureᚋgqlgenᚋgraphᚋmodelᚐTodoᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SearchResult_results(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Todo_id(ctx, field)
+			case "description":
+				return ec.fieldContext_Todo_description(ctx, field)
+			case "dueDate":
+				return ec.fieldContext_Todo_dueDate(ctx, field)
+			case "fileId":
+				return ec.fieldContext_Todo_fileId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Todo_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Todo_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Todo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchResult_total(ctx context.Context, field graphql.CollectedField, obj *model.SearchResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SearchResult_total,
+		func(ctx context.Context) (any, error) {
+			return obj.Total, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SearchResult_total(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchResult_offset(ctx context.Context, field graphql.CollectedField, obj *model.SearchResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SearchResult_offset,
+		func(ctx context.Context) (any, error) {
+			return obj.Offset, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SearchResult_offset(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchResult_limit(ctx context.Context, field graphql.CollectedField, obj *model.SearchResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SearchResult_limit,
+		func(ctx context.Context) (any, error) {
+			return obj.Limit, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SearchResult_limit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2661,6 +2908,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "searchTodos":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_searchTodos(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -2669,6 +2938,60 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var searchResultImplementors = []string{"SearchResult"}
+
+func (ec *executionContext) _SearchResult(ctx context.Context, sel ast.SelectionSet, obj *model.SearchResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, searchResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SearchResult")
+		case "results":
+			out.Values[i] = ec._SearchResult_results(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "total":
+			out.Values[i] = ec._SearchResult_total(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "offset":
+			out.Values[i] = ec._SearchResult_offset(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "limit":
+			out.Values[i] = ec._SearchResult_limit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3182,6 +3505,20 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNSearchResult2todoᚑserviceᚋinternalᚋinfrastructureᚋgqlgenᚋgraphᚋmodelᚐSearchResult(ctx context.Context, sel ast.SelectionSet, v model.SearchResult) graphql.Marshaler {
+	return ec._SearchResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSearchResult2ᚖtodoᚑserviceᚋinternalᚋinfrastructureᚋgqlgenᚋgraphᚋmodelᚐSearchResult(ctx context.Context, sel ast.SelectionSet, v *model.SearchResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SearchResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

@@ -16,6 +16,8 @@ import (
 	"todo-service/internal/infrastructure/stream"
 	"todo-service/internal/usecase"
 
+	customService "todo-service/internal/service"
+
 	"git.ice.global/packages/hitrix"
 	"git.ice.global/packages/hitrix/pkg/middleware"
 	"git.ice.global/packages/hitrix/service"
@@ -32,6 +34,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 )
+
 
 func cmd() {
 	// dsn := fmt.Sprintf(
@@ -77,6 +80,9 @@ func cmd() {
 		registry.ServiceProviderOrmRegistry(entity.Init),
 		registry.ServiceProviderOrmEngine(),
 		registry.ServiceProviderJWT(),
+
+		customService.ServiceProviderRedisSearch(),
+
 	).RegisterDIRequestService(
 		registry.ServiceProviderOrmEngineForContext(true),
 	).RegisterRedisPools(&app.RedisPools{Persistent: "persistent"}).
@@ -167,6 +173,15 @@ func cmd() {
 			// FileUseCase: fileUC,
 		},
 	})
+
+	ctx := context.Background()
+	redisSearch := customService.DI().RedisSearch()
+	
+	if err := redisSearch.CreateTodoIndex(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to create search index")
+	} else {
+		log.Info().Msg("Search index created successfully")
+	}
 
 	// Setup graceful shutdown
 	quit := make(chan os.Signal, 1)

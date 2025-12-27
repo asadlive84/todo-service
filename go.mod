@@ -18,6 +18,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/rs/zerolog v1.34.0
+	github.com/sarulabs/di v2.0.0+incompatible
 	github.com/vektah/gqlparser/v2 v2.5.31
 )
 
@@ -163,7 +164,6 @@ require (
 	github.com/rogpeppe/fastuuid v1.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/ryanuber/columnize v2.1.2+incompatible // indirect
-	github.com/sarulabs/di v2.0.0+incompatible // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/segmentio/fasthash v1.0.3 // indirect
 	github.com/shabbyrobe/xmlwriter v0.0.0-20200208144257-9fca06d00ffa // indirect

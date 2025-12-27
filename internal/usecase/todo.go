@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"todo-service/internal/domain/entity"
 	iface "todo-service/internal/interface"
+	"todo-service/internal/service"
 	// "github.com/google/uuid"
 )
 
@@ -44,6 +46,12 @@ func (uc *TodoUseCase) CreateTodo(ctx context.Context, todo *entity.TodoItemEnti
 	// if err := uc.redisRepo.PublishTodo(ctx, todo); err != nil {
 	// 	return nil, fmt.Errorf("failed to publish todo: %w", err)
 	// }
+
+	redisSearch := service.DI().RedisSearch()
+	err := redisSearch.IndexTodo(ctx, todo.ID, todo.Description,todo.FileID, todo.DueDate, todo.CreatedAt)
+	if err != nil {
+		log.Printf("Failed to index todo: %v", err)
+	}
 
 	return todo, nil
 }

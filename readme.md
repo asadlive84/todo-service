@@ -2,6 +2,77 @@
 
 Go backend service for managing todo items with file upload capabilities. Built with Clean Architecture principles, featuring MySQL, Redis streaming, and comprehensive testing with GoMock.
 
+
+**
+Implement gqlgen, graphQL, beeORM
+**
+
+**Create graphQL:**
+```json
+mutation CreateTodo($input: CreateTodoInput!) {
+  createTodo(input: $input) {
+    todo{
+      id
+      description
+      dueDate
+      fileId
+      createdAt
+    }
+     error{
+      field
+      message
+    }
+  }
+}
+```
+
+**get graphQL by id :**
+```json
+query GetTodo($id: ID!) {
+  todo(id: $id) {
+    id
+    description
+    dueDate
+    createdAt
+    
+  }
+}
+
+```
+```json
+{"id": "1"}
+
+```
+
+===================================================================
+
+```json
+
+{
+  "input": {
+    "description": "sohel item!",
+    "dueDate": "2025-12-27T10:00:00Z",
+    "fileId": "file123"
+  }
+}
+```
+
+**Search graphQL:**
+```json
+query search{
+  searchTodos(query: "item") {
+    total
+    results {
+      id
+      description
+    }
+  }
+}
+
+```
+
+
+
 ## Table of Contents
 
 - [Features](#features)

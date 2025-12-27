@@ -33,7 +33,16 @@ type Mutation {
   createTodo(input: CreateTodoInput!): CreateTodoPayload!
 }
 
+type SearchResult {
+  results: [Todo!]!
+  total: Int!
+  offset: Int!
+  limit: Int!
+}
+
 type Query {
   todos: [Todo!]!
   todo(id: ID!): Todo
+  searchTodos(query: String!, offset: Int! = 0, limit: Int! = 10): SearchResult!
+
 }

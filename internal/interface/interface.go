@@ -4,6 +4,9 @@ import (
 	"context"
 	"io"
 	"todo-service/internal/domain/entity"
+	"todo-service/internal/infrastructure/search"
+
+	"git.ice.global/packages/hitrix/service"
 )
 
 type TodoRepository interface {
@@ -22,4 +25,9 @@ type S3Repository interface {
 
 type RedisStreamRepository interface {
 	PublishTodo(ctx context.Context, todo *entity.TodoItemEntity) error
+}
+
+// RedisSearch returns Redis Search service
+func RedisSearch() *search.RedisSearchService {
+	return service.GetServiceRequired("redis_search").(*search.RedisSearchService)
 }

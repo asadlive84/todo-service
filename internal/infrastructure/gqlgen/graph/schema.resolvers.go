@@ -8,10 +8,12 @@ package graph
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 	"todo-service/internal/domain/entity"
 	"todo-service/internal/infrastructure/gqlgen/graph/model"
+	"todo-service/internal/service"
 )
 
 // CreateTodo is the resolver for the createTodo field.
@@ -75,6 +77,56 @@ func (r *queryResolver) Todo(ctx context.Context, id string) (*model.Todo, error
 	}
 
 	return s, nil
+}
+
+// SearchTodos is the resolver for the searchTodos field.
+func (r *queryResolver) SearchTodos(ctx context.Context, query string, offset int32, limit int32) (*model.SearchResult, error) {
+	log.Printf("SearchTodos called - query: %s, limit: %+v, offset: %+v", query, limit, offset)
+
+	off := 0
+	lim := 10
+
+	if offset != 0 {
+		off = int(offset)
+	}
+	if limit != 0 {
+		lim = int(limit)
+	}
+
+	redisSearch := service.DI().RedisSearch()
+
+	results, total, err := redisSearch.SearchTodos(ctx, query, off, lim)
+	if err != nil {
+		fmt.Printf("error comes from %+v\n", err)
+		return nil, err
+	}
+
+	todos := make([]*model.Todo, 0, len(results))
+	for _, result := range results {
+
+		id, err := strconv.Atoi(result["id"].(string))
+		if err != nil {
+			fmt.Printf("err %+v\n", err)
+			continue
+		}
+
+		todo := &model.Todo{
+			ID:          int32(id),
+			Description: result["description"].(string),
+			DueDate:     result["dueDate"].(string),
+			CreatedAt:   result["createdAt"].(string),
+			FileID:      result["fileid"].(string),
+		}
+
+		todos = append(todos, todo)
+	}
+
+	return &model.SearchResult{
+		Results: todos,
+		Total:   int32(total),
+		Offset:  int32(off),
+		Limit:   int32(lim),
+	}, nil
 }
 
 // Mutation returns MutationResolver implementation.

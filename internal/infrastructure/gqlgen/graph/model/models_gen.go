@@ -24,6 +24,13 @@ type Mutation struct {
 type Query struct {
 }
 
+type SearchResult struct {
+	Results []*Todo `json:"results"`
+	Total   int32   `json:"total"`
+	Offset  int32   `json:"offset"`
+	Limit   int32   `json:"limit"`
+}
+
 type Todo struct {
 	ID          int32  `json:"id"`
 	Description string `json:"description"`
