@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS files (
-    id CHAR(36) PRIMARY KEY,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
     file_name VARCHAR(255) NOT NULL,
     original_name VARCHAR(255) NOT NULL,
     content_type VARCHAR(100) NOT NULL,

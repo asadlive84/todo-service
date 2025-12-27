@@ -68,29 +68,6 @@ func cmd() {
 	// 	os.Getenv("DB_NAME"),
 	// )
 
-	migrationDSN := fmt.Sprintf(
-		"mysql://%s:%s@tcp(%s:%s)/%s",
-		"root",
-		"password",
-		"localhost",
-		"3306",
-		"hitrix_test",
-	)
-
-	// migrationDSN := "root:password@tcp(localhost:3306)/hitrix_test?charset=utf8mb4&parseTime=True"
-
-	migrationsPath := "./migrations"
-	if _, err := os.Stat(migrationsPath); os.IsNotExist(err) {
-		migrationsPath = "/app/migrations"
-	}
-
-	log.Info().Msgf("migrationsPath: %+v", migrationsPath)
-
-	if err := migration.RunMigrations(migrationDSN, migrationsPath); err != nil {
-		log.Fatal().Err(err).Msg("Failed to run migrations")
-	}
-	log.Info().Msg("Migrations completed successfully")
-
 	// Initialize hitrix server
 	s, deferFunc := hitrix.New(
 		"todo-app", "your secret",
@@ -107,16 +84,43 @@ func cmd() {
 
 	defer deferFunc()
 
-	type ConfigI struct {
-		MySQL string
+	configService := service.DI().Config()
+
+	DRIVER_NAME := configService.DefString("DATABASE.MYSQL.DRIVER_NAME", "mysql")
+	USER_NAME := configService.DefString("DATABASE.MYSQL.USER_NAME", "root")
+	PASSWORD := configService.DefString("DATABASE.MYSQL.PASSWORD", "password")
+	HOST := configService.DefString("DATABASE.MYSQL.HOST", "localhost")
+	PORT := configService.DefString("DATABASE.MYSQL.PORT", "3306")
+	DATABASE_NAME := configService.DefString("DATABASE.MYSQL.DATABASE_NAME", "hitrix_test")
+
+	APP_PORT := configService.DefString("server.port", "8080")
+
+	s3Endpoint := configService.DefString("S3.S3_ENDPOINT", "http://localstack:4566")
+	s3Bucket := configService.DefString("S3.S3_BUCKET", "todo-bucket")
+
+	migrationDSN := fmt.Sprintf(
+		"%s://%s:%s@tcp(%s:%s)/%s",
+		DRIVER_NAME,
+		USER_NAME,
+		PASSWORD,
+		HOST,
+		PORT,
+		DATABASE_NAME,
+	)
+
+	// migrationDSN := "root:password@tcp(localhost:3306)/hitrix_test?charset=utf8mb4&parseTime=True"
+
+	migrationsPath := "./migrations"
+	if _, err := os.Stat(migrationsPath); os.IsNotExist(err) {
+		migrationsPath = "/app/migrations"
 	}
 
-	c := &ConfigI{}
+	log.Info().Msgf("migrationsPath: %+v", migrationsPath)
 
-	configService := service.DI().Config()
-	fmt.Printf("@@@@@@@@@@@@@%+v\n", configService)
-
-	fmt.Printf("ConfigI %+v\n", c)
+	if err := migration.RunMigrations(migrationDSN, migrationsPath); err != nil {
+		log.Fatal().Err(err).Msg("Failed to run migrations")
+	}
+	log.Info().Msg("Migrations completed successfully")
 
 	ormengine := service.DI().OrmEngine()
 
@@ -126,16 +130,16 @@ func cmd() {
 
 	// Get S3 configuration
 	// s3Bucket := os.Getenv("S3_BUCKET")
-	s3Bucket := "todo-bucket"
-	if s3Bucket == "" {
-		s3Bucket = "todos-bucket" // default
-	}
+	// s3Bucket := "todo-bucket"
+	// if s3Bucket == "" {
+	// 	s3Bucket = "todos-bucket" // default
+	// }
 
 	// s3Endpoint := os.Getenv("S3_ENDPOINT")
-	s3Endpoint := " http://localstack:4566"
-	if s3Bucket == "" || s3Endpoint == "" {
-		log.Fatal().Msg("S3_BUCKET or S3_ENDPOINT not set")
-	}
+	// s3Endpoint := " http://localstack:4566"
+	// if s3Bucket == "" || s3Endpoint == "" {
+	// 	log.Fatal().Msg("S3_BUCKET or S3_ENDPOINT not set")
+	// }
 
 	log.Info().Msgf("S3_BUCKET=%s, S3_ENDPOINT=%s", s3Bucket, s3Endpoint)
 
@@ -149,11 +153,6 @@ func cmd() {
 	// Initialize use cases
 	todoUC := usecase.NewTodoUseCase(todoRepo, s3Repo, redisRepo, os.Getenv("S3_BUCKET"))
 	// fileUC := usecase.NewFileUseCase(fileRepo, s3Repo, s3Bucket)
-
-	APP_PORT := os.Getenv("APP_PORT")
-	if APP_PORT == "" {
-		APP_PORT = "8080" // default port
-	}
 
 	// Convert port to uint for hitrix
 	portNum, err := strconv.ParseUint(APP_PORT, 10, 32)

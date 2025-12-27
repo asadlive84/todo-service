@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 	"todo-service/internal/domain/entity"
-	iface "todo-service/internal/domain/interface"
+	iface "todo-service/internal/interface"
 	"todo-service/internal/infrastructure/helper"
 
 	"github.com/google/uuid"

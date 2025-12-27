@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"todo-service/internal/domain/entity"
-	_interface "todo-service/internal/domain/interface"
+	_interface "todo-service/internal/interface"
 
 	"github.com/redis/go-redis/v9"
 )

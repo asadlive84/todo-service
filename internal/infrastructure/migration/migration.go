@@ -2,13 +2,13 @@ package migration
 
 import (
 	"fmt"
-	_ "github.com/golang-migrate/migrate/v4/database/mysql" // Add this
+	_ "github.com/golang-migrate/migrate/v4/database/mysql" 
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
-	_ "github.com/go-sql-driver/mysql" // Add this too
+	_ "github.com/go-sql-driver/mysql" 
 )
 
 func RunMigrations(dbURL string, migrationsPath string) error {
