@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"strconv"
 )
 
 func ComputeFileHash(content []byte) string {
@@ -17,4 +18,24 @@ func ComputeFileHashFromReader(reader io.Reader) (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
+
+
+// Redis usually returns []byte. This converts everything to string safely.
+func ToString(i interface{}) string {
+	switch v := i.(type) {
+	case []byte:
+		return string(v)
+	case string:
+		return v
+	case int:
+		return strconv.Itoa(v)
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case nil:
+		return ""
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }

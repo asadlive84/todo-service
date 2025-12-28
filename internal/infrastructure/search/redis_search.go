@@ -3,9 +3,9 @@ package search
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
+	"todo-service/internal/infrastructure/helper"
 
 	"git.ice.global/packages/beeorm/v4"
 	"git.ice.global/packages/hitrix/service"
@@ -97,24 +97,16 @@ func (s *RedisSearchService) parseSearchResults(result interface{}) ([]map[strin
 		return []map[string]interface{}{}, 0, nil
 	}
 
-	countVal, _ := data[0].(int64) // Redigo often returns int64 for counts
-	// Fallback if it returns int
+	countVal, _ := data[0].(int64) 
 	if c, ok := data[0].(int); ok {
 		countVal = int64(c)
 	}
 
 	parsedResults := make([]map[string]interface{}, 0)
 
-	// 3. Loop through the results
-	// We start at 1 because 0 is the count.
-	// The structure is: [Key, Fields, Key, Fields...]
-	// So we step by 2.
 	for i := 1; i < len(data); i += 2 {
-		// data[i] is the Document Key (e.g. "item:8") - typically unused in mapping
-		// data[i+1] is the Fields Slice (the part you want)
-
 		if i+1 >= len(data) {
-			break // Safety check
+			break 
 		}
 
 		fieldsRaw, ok := data[i+1].([]interface{})
@@ -132,8 +124,8 @@ func (s *RedisSearchService) parseSearchResults(result interface{}) ([]map[strin
 			}
 
 			// Redis often returns []byte, so we use a helper to stringify keys/values
-			key := toString(fieldsRaw[k])
-			val := toString(fieldsRaw[k+1])
+			key := helper.ToString(fieldsRaw[k])
+			val := helper.ToString(fieldsRaw[k+1])
 
 			itemMap[key] = val
 		}
@@ -141,85 +133,66 @@ func (s *RedisSearchService) parseSearchResults(result interface{}) ([]map[strin
 		parsedResults = append(parsedResults, itemMap)
 	}
 
-	fmt.Println("============================")
-
 	return parsedResults, countVal, nil
 }
 
-// === Helper Function ===
-// Redis usually returns []byte. This converts everything to string safely.
-func toString(i interface{}) string {
-	switch v := i.(type) {
-	case []byte:
-		return string(v)
-	case string:
-		return v
-	case int:
-		return strconv.Itoa(v)
-	case int64:
-		return strconv.FormatInt(v, 10)
-	case nil:
-		return ""
-	default:
-		return fmt.Sprintf("%v", v)
-	}
-}
 
-// Search by description
-func (s *RedisSearchService) SearchByDescription(ctx context.Context, description string) ([]map[string]interface{}, error) {
-	query := fmt.Sprintf("@description:%s", description)
-	todos, _, err := s.SearchTodos(ctx, query, 0, 10)
-	return todos, err
-}
 
-// Delete todo from index
-func (s *RedisSearchService) DeleteTodo(ctx context.Context, todoID uint64) error {
-	key := fmt.Sprintf("todo:%d", todoID)
-	s.redisCache.Del(key)
-	return nil
-}
+// // Search by description
+// func (s *RedisSearchService) SearchByDescription(ctx context.Context, description string) ([]map[string]interface{}, error) {
+// 	query := fmt.Sprintf("@description:%s", description)
+// 	todos, _, err := s.SearchTodos(ctx, query, 0, 10)
+// 	return todos, err
+// }
 
-// Get index info
-func (s *RedisSearchService) GetIndexInfo(ctx context.Context) (map[string]interface{}, error) {
-	script := `
-		return redis.call('FT.INFO', 'idx:todos')
-	`
+// // Delete todo from index
+// func (s *RedisSearchService) DeleteTodo(ctx context.Context, todoID uint64) error {
+// 	key := fmt.Sprintf("todo:%d", todoID)
+// 	s.redisCache.Del(key)
+// 	return nil
+// }
 
-	result := s.redisCache.Eval(script, []string{})
+// // Get index info
+// func (s *RedisSearchService) GetIndexInfo(ctx context.Context) (map[string]interface{}, error) {
+// 	script := `
+// 		return redis.call('FT.INFO', 'idx:todos')
+// 	`
 
-	return s.parseIndexInfo(result)
-}
+// 	result := s.redisCache.Eval(script, []string{})
 
-// Parse index info
-func (s *RedisSearchService) parseIndexInfo(result interface{}) (map[string]interface{}, error) {
-	if result == nil {
-		return nil, fmt.Errorf("no index info found")
-	}
+// 	return s.parseIndexInfo(result)
+// }
 
-	info := make(map[string]interface{})
+// // Parse index info
+// func (s *RedisSearchService) parseIndexInfo(result interface{}) (map[string]interface{}, error) {
+// 	if result == nil {
+// 		return nil, fmt.Errorf("no index info found")
+// 	}
 
-	if resultSlice, ok := result.([]interface{}); ok {
-		for i := 0; i < len(resultSlice); i += 2 {
-			if i+1 < len(resultSlice) {
-				key, ok1 := resultSlice[i].(string)
-				value := resultSlice[i+1]
+// 	info := make(map[string]interface{})
 
-				if ok1 {
-					info[key] = value
-				}
-			}
-		}
-	}
+// 	if resultSlice, ok := result.([]interface{}); ok {
+// 		for i := 0; i < len(resultSlice); i += 2 {
+// 			if i+1 < len(resultSlice) {
+// 				key, ok1 := resultSlice[i].(string)
+// 				value := resultSlice[i+1]
 
-	return info, nil
-}
+// 				if ok1 {
+// 					info[key] = value
+// 				}
+// 			}
+// 		}
+// 	}
 
-// Drop index (for testing)
-func (s *RedisSearchService) DropIndex(ctx context.Context) error {
-	script := `
-		return redis.call('FT.DROPINDEX', 'idx:todos', 'DD')
-	`
+// 	return info, nil
+// }
 
-	s.redisCache.Eval(script, []string{})
-	return nil
-}
+// // Drop index (for testing)
+// func (s *RedisSearchService) DropIndex(ctx context.Context) error {
+// 	script := `
+// 		return redis.call('FT.DROPINDEX', 'idx:todos', 'DD')
+// 	`
+
+// 	s.redisCache.Eval(script, []string{})
+// 	return nil
+// }
