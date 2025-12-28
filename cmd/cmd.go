@@ -35,42 +35,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-
 func cmd() {
-	// dsn := fmt.Sprintf(
-	// 	"%s:%s@tcp(%s:%s)/%s?parseTime=true",
-	// 	os.Getenv("DB_USER"),
-	// 	os.Getenv("DB_PASSWORD"),
-	// 	os.Getenv("DB_HOST"),
-	// 	os.Getenv("DB_PORT"),
-	// 	os.Getenv("DB_NAME"),
-	// )
-
-	// db, err := sql.Open("mysql", dsn)
-	// if err != nil {
-	// 	log.Fatal().Err(err).Msg("Failed to open database")
-	// }
-	// defer db.Close()
-
-	// db.SetMaxOpenConns(25)
-	// db.SetMaxIdleConns(5)
-	// db.SetConnMaxLifetime(5 * time.Minute)
-
-	// Retry connection with exponential backoff
-	// if err := waitForDatabase(db, 30*time.Second); err != nil {
-	// 	log.Fatal().Err(err).Msg("Failed to connect to database")
-	// }
-	// log.Info().Msg("Database connected successfully")
-
-	// migrationDSN := fmt.Sprintf(
-	// 	"mysql://%s:%s@tcp(%s:%s)/%s",
-	// 	os.Getenv("DB_USER"),
-	// 	os.Getenv("DB_PASSWORD"),
-	// 	os.Getenv("DB_HOST"),
-	// 	os.Getenv("DB_PORT"),
-	// 	os.Getenv("DB_NAME"),
-	// )
-
 	// Initialize hitrix server
 	s, deferFunc := hitrix.New(
 		"todo-app", "your secret",
@@ -82,7 +47,6 @@ func cmd() {
 		registry.ServiceProviderJWT(),
 
 		customService.ServiceProviderRedisSearch(),
-
 	).RegisterDIRequestService(
 		registry.ServiceProviderOrmEngineForContext(true),
 	).RegisterRedisPools(&app.RedisPools{Persistent: "persistent"}).
@@ -134,19 +98,6 @@ func cmd() {
 	todoRepo := repository.NewTodoRepository(ormengine)
 	// fileRepo := repository.NewFileRepository(db)
 
-	// Get S3 configuration
-	// s3Bucket := os.Getenv("S3_BUCKET")
-	// s3Bucket := "todo-bucket"
-	// if s3Bucket == "" {
-	// 	s3Bucket = "todos-bucket" // default
-	// }
-
-	// s3Endpoint := os.Getenv("S3_ENDPOINT")
-	// s3Endpoint := " http://localstack:4566"
-	// if s3Bucket == "" || s3Endpoint == "" {
-	// 	log.Fatal().Msg("S3_BUCKET or S3_ENDPOINT not set")
-	// }
-
 	log.Info().Msgf("S3_BUCKET=%s, S3_ENDPOINT=%s", s3Bucket, s3Endpoint)
 
 	s3Repo, err := storage.NewS3Repository(context.Background(), s3Bucket, s3Endpoint)
@@ -176,7 +127,7 @@ func cmd() {
 
 	ctx := context.Background()
 	redisSearch := customService.DI().RedisSearch()
-	
+
 	if err := redisSearch.CreateTodoIndex(ctx); err != nil {
 		log.Error().Err(err).Msg("Failed to create search index")
 	} else {
@@ -224,23 +175,6 @@ func cmd() {
 		log.Info().Msg("Server shutdown successfully")
 	}
 }
-
-// waitForDatabase retries database connection with exponential backoff
-// func waitForDatabase(db *sql.DB, timeout time.Duration) error {
-// 	deadline := time.Now().Add(timeout)
-// 	var lastErr error
-
-// 	for time.Now().Before(deadline) {
-// 		if err := db.Ping(); err == nil {
-// 			return nil
-// 		} else {
-// 			lastErr = err
-// 			time.Sleep(2 * time.Second)
-// 		}
-// 	}
-
-// 	return fmt.Errorf("timeout waiting for database: %w", lastErr)
-// }
 
 func gqlSetup(srv *handler.Server) {
 	srv.AddTransport(transport.Options{})
