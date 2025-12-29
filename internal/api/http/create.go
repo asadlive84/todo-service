@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (h *Handler) CreateTodo(w http.ResponseWriter, r *http.Request) {
+func (h *Http) CreateTodo(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("CreateTodo handler called")
 	var req struct {
 		Description string `json:"description"`
@@ -43,15 +43,17 @@ func (h *Handler) CreateTodo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	todo, err := h.todoUC.CreateTodo(r.Context(), &entity.TodoItemEntity{
+	en := &entity.TodoItem{
 		Description: req.Description,
 		DueDate:     due,
 		FileID:      req.FileID,
-	})
+	}
+
+	err = h.todoUC.Create(r.Context(), en)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(todo)
+	json.NewEncoder(w).Encode(en)
 }

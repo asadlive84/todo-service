@@ -8,11 +8,13 @@ import (
 	"path/filepath"
 	"time"
 	"todo-service/internal/domain/entity"
-	iface "todo-service/internal/interface"
 	"todo-service/internal/infrastructure/helper"
+	iface "todo-service/internal/port"
 
 	"github.com/google/uuid"
 )
+
+const MaxFileSize = 5
 
 type FileUseCase struct {
 	fileRepo iface.FileRepository

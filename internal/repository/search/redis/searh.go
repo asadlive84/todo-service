@@ -1,4 +1,4 @@
-package search
+package redis
 
 import (
 	"context"
@@ -97,7 +97,7 @@ func (s *RedisSearchService) parseSearchResults(result interface{}) ([]map[strin
 		return []map[string]interface{}{}, 0, nil
 	}
 
-	countVal, _ := data[0].(int64) 
+	countVal, _ := data[0].(int64)
 	if c, ok := data[0].(int); ok {
 		countVal = int64(c)
 	}
@@ -106,7 +106,7 @@ func (s *RedisSearchService) parseSearchResults(result interface{}) ([]map[strin
 
 	for i := 1; i < len(data); i += 2 {
 		if i+1 >= len(data) {
-			break 
+			break
 		}
 
 		fieldsRaw, ok := data[i+1].([]interface{})
@@ -135,64 +135,3 @@ func (s *RedisSearchService) parseSearchResults(result interface{}) ([]map[strin
 
 	return parsedResults, countVal, nil
 }
-
-
-
-// // Search by description
-// func (s *RedisSearchService) SearchByDescription(ctx context.Context, description string) ([]map[string]interface{}, error) {
-// 	query := fmt.Sprintf("@description:%s", description)
-// 	todos, _, err := s.SearchTodos(ctx, query, 0, 10)
-// 	return todos, err
-// }
-
-// // Delete todo from index
-// func (s *RedisSearchService) DeleteTodo(ctx context.Context, todoID uint64) error {
-// 	key := fmt.Sprintf("todo:%d", todoID)
-// 	s.redisCache.Del(key)
-// 	return nil
-// }
-
-// // Get index info
-// func (s *RedisSearchService) GetIndexInfo(ctx context.Context) (map[string]interface{}, error) {
-// 	script := `
-// 		return redis.call('FT.INFO', 'idx:todos')
-// 	`
-
-// 	result := s.redisCache.Eval(script, []string{})
-
-// 	return s.parseIndexInfo(result)
-// }
-
-// // Parse index info
-// func (s *RedisSearchService) parseIndexInfo(result interface{}) (map[string]interface{}, error) {
-// 	if result == nil {
-// 		return nil, fmt.Errorf("no index info found")
-// 	}
-
-// 	info := make(map[string]interface{})
-
-// 	if resultSlice, ok := result.([]interface{}); ok {
-// 		for i := 0; i < len(resultSlice); i += 2 {
-// 			if i+1 < len(resultSlice) {
-// 				key, ok1 := resultSlice[i].(string)
-// 				value := resultSlice[i+1]
-
-// 				if ok1 {
-// 					info[key] = value
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return info, nil
-// }
-
-// // Drop index (for testing)
-// func (s *RedisSearchService) DropIndex(ctx context.Context) error {
-// 	script := `
-// 		return redis.call('FT.DROPINDEX', 'idx:todos', 'DD')
-// 	`
-
-// 	s.redisCache.Eval(script, []string{})
-// 	return nil
-// }

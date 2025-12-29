@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"todo-service/internal/domain/entity"
-	_interface "todo-service/internal/interface"
+	_interface "todo-service/internal/port"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -22,7 +22,7 @@ func NewRedisStreamRepository(addr, stream string) _interface.RedisStreamReposit
 	return &redisStreamRepository{client: rdb, stream: stream}
 }
 
-func (r *redisStreamRepository) PublishTodo(ctx context.Context, todo *entity.TodoItemEntity) error {
+func (r *redisStreamRepository) PublishTodo(ctx context.Context, todo *entity.TodoItem) error {
 	data, err := json.Marshal(todo)
 	if err != nil {
 		return err

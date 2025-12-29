@@ -8,15 +8,13 @@ import (
 	"strconv"
 	"syscall"
 	"time"
-	"todo-service/internal/domain/entity"
-	"todo-service/internal/infrastructure/gqlgen/graph"
+	graphqlH "todo-service/internal/api/graphql/handler"
 	"todo-service/internal/infrastructure/migration"
-	"todo-service/internal/infrastructure/repository"
+
+	// "todo-service/internal/infrastructure/repository"
 	"todo-service/internal/infrastructure/storage"
 	"todo-service/internal/infrastructure/stream"
-	"todo-service/internal/usecase"
-
-	customService "todo-service/internal/service"
+	todoUseCase "todo-service/internal/usecase/todo"
 
 	"git.ice.global/packages/hitrix"
 	"git.ice.global/packages/hitrix/pkg/middleware"
@@ -32,6 +30,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/vektah/gqlparser/v2/ast"
 
+	beeORMentity "todo-service/internal/repository/beeorm"
+	"todo-service/internal/repository/beeorm/repository"
+	redisSearch "todo-service/internal/repository/search/redis"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -42,11 +44,11 @@ func cmd() {
 	).RegisterDIGlobalService(
 		registry.ServiceProviderErrorLogger(),
 		registry.ServiceProviderConfigDirectory("./config"),
-		registry.ServiceProviderOrmRegistry(entity.Init),
+		registry.ServiceProviderOrmRegistry(beeORMentity.Init),
 		registry.ServiceProviderOrmEngine(),
 		registry.ServiceProviderJWT(),
 
-		customService.ServiceProviderRedisSearch(),
+		// customService.ServiceProviderRedisSearch(),
 	).RegisterDIRequestService(
 		registry.ServiceProviderOrmEngineForContext(true),
 	).RegisterRedisPools(&app.RedisPools{Persistent: "persistent"}).
@@ -95,7 +97,7 @@ func cmd() {
 	ormengine := service.DI().OrmEngine()
 
 	// Initialize repositories
-	todoRepo := repository.NewTodoRepository(ormengine)
+	todoRepo := repository.NewOrmEngine(ormengine)
 	// fileRepo := repository.NewFileRepository(db)
 
 	log.Info().Msgf("S3_BUCKET=%s, S3_ENDPOINT=%s", s3Bucket, s3Endpoint)
@@ -107,8 +109,10 @@ func cmd() {
 
 	redisRepo := stream.NewRedisStreamRepository(os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_STREAM"))
 
+	newRedisSearch := redisSearch.NewRedisSearchService()
+
 	// Initialize use cases
-	todoUC := usecase.NewTodoUseCase(todoRepo, s3Repo, redisRepo, os.Getenv("S3_BUCKET"))
+	todoUC := todoUseCase.NewTodoUseCase(todoRepo, s3Repo, redisRepo, newRedisSearch, os.Getenv("S3_BUCKET"))
 	// fileUC := usecase.NewFileUseCase(fileRepo, s3Repo, s3Bucket)
 
 	// Convert port to uint for hitrix
@@ -118,17 +122,17 @@ func cmd() {
 	}
 
 	// Setup GraphQL schema
-	executableSchema := graph.NewExecutableSchema(graph.Config{
-		Resolvers: &graph.Resolver{
+	executableSchema := graphqlH.NewExecutableSchema(graphqlH.Config{
+		Resolvers: &graphqlH.Resolver{
 			TodoUseCase: todoUC,
 			// FileUseCase: fileUC,
 		},
 	})
 
 	ctx := context.Background()
-	redisSearch := customService.DI().RedisSearch()
+	// redisSearch := customService.DI().RedisSearch()
 
-	if err := redisSearch.CreateTodoIndex(ctx); err != nil {
+	if err := newRedisSearch.CreateTodoIndex(ctx); err != nil {
 		log.Error().Err(err).Msg("Failed to create search index")
 	} else {
 		log.Info().Msg("Search index created successfully")

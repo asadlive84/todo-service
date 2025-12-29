@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"encoding/json"
@@ -7,18 +7,20 @@ import (
 	"todo-service/internal/usecase"
 
 	"github.com/gorilla/mux"
+
+	"todo-service/internal/port"
 )
 
-type Handler struct {
-	todoUC *usecase.TodoUseCase
+type Http struct {
+	todoUC port.TodoUseCasePort
 	fileUC *usecase.FileUseCase
 }
 
-func NewHandler(todoUC *usecase.TodoUseCase, fileUC *usecase.FileUseCase) *Handler {
-	return &Handler{todoUC: todoUC, fileUC: fileUC}
+func NewHandler(todoUC port.TodoUseCasePort, fileUC *usecase.FileUseCase) *Http {
+	return &Http{todoUC: todoUC, fileUC: fileUC}
 }
 
-func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
+func (h *Http) Health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status": "ok",
@@ -26,7 +28,7 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func RegisterRoutes(r *mux.Router, h *Handler) {
+func RegisterRoutes(r *mux.Router, h *Http) {
 
 	r.HandleFunc("/todo", h.CreateTodo).Methods("POST")
 

@@ -1,4 +1,4 @@
-package graph
+package handler
 
 //go:generate go tool gqlgen generate
 
@@ -7,8 +7,9 @@ package graph
 // It serves as dependency injection for your app, add any dependencies you require
 // here.
 
-import "todo-service/internal/usecase"
+import "todo-service/internal/port"
 
 type Resolver struct {
-	TodoUseCase *usecase.TodoUseCase
+	TodoUseCase port.TodoUseCasePort
+	// Search      port.SearchRepo
 }

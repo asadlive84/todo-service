@@ -1,29 +1,26 @@
 package entity
 
 import (
+	"errors"
 	"time"
-
-	"git.ice.global/packages/beeorm/v4"
 )
 
-// type TodoItem struct {
-// 	ID          string    `json:"id"`
-// 	Description string    `json:"description"`
-// 	DueDate     time.Time `json:"dueDate"`
-// 	FileID      string    `json:"fileId,omitempty"`
-// }
-
-type TodoItemEntity struct {
-	beeorm.ORM  `orm:"table=todos;redisCache"`
-	ID          uint64 `orm:"pk"`
+type TodoItem struct {
+	ID          int
 	Description string
-	DueDate     time.Time `orm:"time"`
-	CreatedAt   time.Time `orm:"time"`
+	DueDate     time.Time
 	FileID      string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
-type CreateTodoInput struct {
-	Description string    `json:"description"`
-	DueDate     time.Time `json:"dueDate"`
-	FileID      string    `json:"fileId,omitempty"`
+func (todo *TodoItem) Validate() error {
+	if todo.Description == "" {
+		return errors.New("description cannot be empty")
+	}
+	if todo.DueDate.IsZero() {
+		return errors.New("dueDate is required")
+	}
+
+	return nil
 }

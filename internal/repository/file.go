@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"todo-service/internal/domain/entity"
-	iface "todo-service/internal/interface"
+	iface "todo-service/internal/port"
 )
 
 type FileRepository struct {
