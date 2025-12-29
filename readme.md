@@ -3,6 +3,8 @@
 Go backend service for managing todo items with file upload capabilities. Built with Clean Architecture principles, featuring MySQL, Redis streaming, and comprehensive testing with GoMock.
 
 
+##Currenly some code no working correctly! I will fix asap
+
 **
 Implement gqlgen, graphQL, beeORM
 **
@@ -110,7 +112,7 @@ GraphQL Request
     ↓
 internal/api/graphql/handler/ (Infrastructure - Input Adapter)
     ↓
-internal/port/interface.go (Interface Layer - Input Port)
+internal/port/port.go (Interface Layer - Input Port)
     ↓
 internal/usecase/todo/ (Application Layer)
     ↓
@@ -122,11 +124,11 @@ MySQL Database
 ```
 
 ### Layers:
-
-- **Domain**: Pure domain entities with no business logic
-- **Use Cases**: Business logic independent of frameworks
-- **Interfaces**: Abstraction contracts for services
-- **Infrastructure**: Database, storage, and messaging implementations
+- Domain (internal/domain/entity/): Pure TodoItem and File entities with no BeeORM tags, database logic, or framework dependencies
+- Use Cases (internal/usecase/todo/, internal/usecase/file/): Todo creation, retrieval, and search business logic with validation, independent of GraphQL, BeeORM, or Redis
+- Interfaces (internal/port/): Abstraction contracts including TodoUseCasePort (for GraphQL handlers), TodoDBPort (for database operations), and TodoSearchPort (for search operations)
+- Repository (internal/repository/beeorm/, internal/repository/search/): Database queries with BeeORM, Redis search indexing, and data persistence implementations
+- Infrastructure (internal/infrastructure/, internal/api/): BeeORM engine setup, Redis client connections, S3 configuration, GraphQL server initialization, and framework configurations
 
 ---
 
