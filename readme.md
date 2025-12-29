@@ -106,13 +106,19 @@ query search{
 The application follows Clean Architecture principles with clear separation of concerns:
 
 ```
-Domain Layer
+GraphQL Request
     ↓
-Application Layer (Use Cases)
+internal/api/graphql/handler/ (Infrastructure - Input Adapter)
     ↓
-Interface Layer (Abstractions)
+internal/port/interface.go (Interface Layer - Input Port)
     ↓
-Infrastructure Layer (Implementations)
+internal/usecase/todo/ (Application Layer)
+    ↓
+internal/port/port.go (Interface Layer - Output Port)
+    ↓
+internal/repository/beeorm/ (Infrastructure - Output Adapter)
+    ↓
+MySQL Database
 ```
 
 ### Layers:
