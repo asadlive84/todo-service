@@ -26,12 +26,11 @@ type FileUseCasePort interface {
 type TodoRepoPort interface {
 	Create(ctx context.Context, todo *domain.TodoItem) error
 	GetByID(ctx context.Context, id int) (*domain.TodoItem, error)
+	CreateFile(ctx context.Context, file *domain.File) error
 }
 
 type FileRepoPort interface {
-	CreateFile(ctx context.Context, file *entity.File) error
 	GetFileByID(ctx context.Context, id string) (*entity.File, error)
-	// ValidateFileID(ctx context.Context, fileID string) (bool, error)
 }
 
 type SearchRepo interface {

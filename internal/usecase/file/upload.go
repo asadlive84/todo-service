@@ -47,7 +47,7 @@ func (uc *FileUseCase) UploadFile(ctx context.Context, file *entity.File) error 
 	// 	CreatedAt:    now,
 	// }
 
-	if err := uc.fileRepo.CreateFile(ctx, file); err != nil {
+	if err := uc.todoRepo.CreateFile(ctx, file); err != nil {
 		return fmt.Errorf("failed to save file metadata: %w", err)
 	}
 

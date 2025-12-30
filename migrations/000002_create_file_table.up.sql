@@ -1,14 +1,14 @@
 CREATE TABLE IF NOT EXISTS files (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    file_name VARCHAR(255) NOT NULL,
-    original_name VARCHAR(255) NOT NULL,
-    content_type VARCHAR(100) NOT NULL,
-    file_size BIGINT NOT NULL,
-    file_hash VARCHAR(64),
-    storage_path VARCHAR(500),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fileName VARCHAR(255) NOT NULL,
+    originalName VARCHAR(255) NOT NULL,
+    contentType VARCHAR(100) NOT NULL,
+    fileSize BIGINT NOT NULL,
+    filehash VARCHAR(64),
+    storagepath VARCHAR(500),
+    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    INDEX idx_created_at (created_at),
-    INDEX idx_file_name (file_name),
-    INDEX idx_content_type (content_type)
+    INDEX createdat (createdat),
+    INDEX idx_filename (fileName),
+    INDEX idx_contentType (contentType)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

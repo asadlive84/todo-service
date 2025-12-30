@@ -7,7 +7,7 @@ import (
 )
 
 type File struct {
-	ID           string
+	ID           int64
 	FileName     string
 	OriginalName string
 	ContentType  string

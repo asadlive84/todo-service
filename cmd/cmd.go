@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"database/sql"
+
 	// "database/sql"
 	"fmt"
 	"os"
@@ -74,8 +76,6 @@ func cmd() {
 	REDIS_ADDR := configService.DefString("REDIS.REDIS_ADDR", "localhost:6379")
 	REDIS_STREAM := configService.DefString("REDIS.REDIS_STREAM", "todos:events")
 
-	//os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_STREAM")
-
 	s3Endpoint := configService.DefString("S3.S3_ENDPOINT", "http://localstack:4566")
 	s3Bucket := configService.DefString("S3.S3_BUCKET", "todo-bucket")
 
@@ -88,8 +88,6 @@ func cmd() {
 		PORT,
 		DATABASE_NAME,
 	)
-
-	// migrationDSN := "root:password@tcp(localhost:3306)/hitrix_test?charset=utf8mb4&parseTime=True"
 
 	migrationsPath := "./migrations"
 	if _, err := os.Stat(migrationsPath); os.IsNotExist(err) {
@@ -108,9 +106,40 @@ func cmd() {
 	// TODO: Must change, now temporary
 	// db1 := *sql.DB
 
+	dsn := fmt.Sprintf(
+
+		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
+
+		DRIVER_NAME,
+
+		PASSWORD,
+
+		HOST,
+
+		PORT,
+
+		DATABASE_NAME,
+	)
+
+	db, err := sql.Open("mysql", dsn)
+
+	if err != nil {
+
+		log.Fatal().Err(err).Msg("Failed to open database")
+
+	}
+
+	defer db.Close()
+
+	db.SetMaxOpenConns(25)
+
+	db.SetMaxIdleConns(5)
+
+	db.SetConnMaxLifetime(5 * time.Minute)
+
 	// Initialize repositories
 	todoRepo := beeORMRepo.NewOrmEngine(ormengine)
-	fileRepo := fileRepo.NewFileRepository(nil) // MUST CHANGE
+	fileRepo := fileRepo.NewFileRepository(db) // MUST CHANGE
 
 	log.Info().Msgf("S3_BUCKET=%s, S3_ENDPOINT=%s", s3Bucket, s3Endpoint)
 
@@ -119,9 +148,6 @@ func cmd() {
 		log.Fatal().Err(err).Msg("Failed to initialize S3")
 	}
 
-	fmt.Println("=======REDIS_ADDR=====>", REDIS_ADDR)
-	fmt.Println("=======REDIS_STREAM=====>", REDIS_STREAM)
-
 	redis.InitRedis(REDIS_ADDR)
 
 	redisRepo := stream.NewRedisStreamRepository(REDIS_ADDR, REDIS_STREAM)
@@ -129,8 +155,8 @@ func cmd() {
 	newRedisSearch := redisSearch.NewRedisSearchService()
 
 	// Initialize use cases
-	todoUC := todoUseCase.NewTodoUseCase(todoRepo, s3Repo, redisRepo, newRedisSearch, os.Getenv("S3_BUCKET"))
-	fileUC := fileUseCase.NewFileUseCase(fileRepo, s3Repo, s3Bucket)
+	todoUC := todoUseCase.NewTodoUseCase(todoRepo, s3Repo, redisRepo, newRedisSearch, s3Bucket)
+	fileUC := fileUseCase.NewFileUseCase(fileRepo, todoRepo, s3Repo, s3Bucket)
 
 	// Convert port to uint for hitrix
 	portNum, err := strconv.ParseUint(APP_PORT, 10, 32)

@@ -9,6 +9,7 @@ import (
 func Init(registry *beeorm.Registry) {
 	registry.RegisterEntity(
 		&e.TodoEntity{},
+		&e.FileEnity{},
 	)
 	registry.RegisterEntity(&entity.RequestLoggerEntity{})
 

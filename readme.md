@@ -41,12 +41,6 @@ query GetTodo($id: ID!) {
 }
 
 ```
-```json
-{"id": "1"}
-
-```
-
-===================================================================
 
 ```json
 
@@ -58,6 +52,16 @@ query GetTodo($id: ID!) {
   }
 }
 ```
+
+
+```json
+{"id": "1"}
+
+```
+
+===================================================================
+
+
 
 **Search graphQL:**
 ```json
@@ -74,6 +78,20 @@ query search{
 ```
 
 
+
+
+upload file to graphQL via terminal
+
+```bash
+curl -X POST http://localhost:8080/query \
+  -F 'operations={
+    "query": "mutation uploadFile($file: Upload!) { uploadFile(file: $file) { id fileName originalName contentType fileSize fileHash uploadedAt } }",
+    "variables": { "file": null }
+  }' \
+  -F 'map={ "0": ["variables.file"] }' \
+  -F '0=@/home/asad/test-asad.txt;type=text/plain'
+
+```
 
 ## Table of Contents
 
@@ -529,3 +547,5 @@ then enter the redis cli and give this command for check stream message
 ```bash
 XRANGE todos:events - +
 ```
+
+
