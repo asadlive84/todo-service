@@ -3,7 +3,7 @@
 Go backend service for managing todo items with file upload capabilities. Built with Clean Architecture principles, featuring MySQL, Redis streaming, and comprehensive testing with GoMock.
 
 
-##Currenly some code no working correctly! I will fix asap
+Note: currrenly rest api endpoint, test, mock test aren't working properly. i will fix asap. Please use graphQL endpoint insted of rest.
 
 **
 Implement gqlgen, graphQL, beeORM
@@ -109,14 +109,12 @@ curl -X POST http://localhost:8080/query \
 ## Features
 
 - Create and manage todo items
+- Hitrix, beeorm, redis-search integrate
 - File upload with metadata storage
 - Redis Stream integration for event publishing
 - MySQL database
-- Comprehensive unit tests with GoMock
-- Performance benchmarking
 - Docker containerization
 - Automatic database migrations
-- Health check endpoints
 - Clean Architecture design
 
 ---
@@ -185,15 +183,15 @@ APP_PORT=8080
 # Database Configuration
 DB_HOST=mysql
 DB_PORT=3306
-DB_USER=todo_user
-DB_PASSWORD=todo_password
-DB_NAME=todo_db
+DB_USER=user
+DB_PASSWORD=password
+DB_NAME=hitrix_test
 
 # Redis Configuration
 REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_ADDR=redis:6379
-REDIS_STREAM=todos
+REDIS_STREAM=todos:events
 
 # S3 Configuration (LocalStack)
 S3_ENDPOINT=http://localstack:4566
@@ -233,6 +231,8 @@ make benchmark
 make generate-mocks
 ```
 
+Currently: benchmark and generate  mock not working
+
 ### Using Docker Compose Directly
 
 ```bash
@@ -259,6 +259,8 @@ Expected response:
 }
 ```
 
+
+Note: currrenly rest api endpoint doesn't work. Please use graphQL endpoint insted of rest.
 ---
 
 ## API Endpoints
