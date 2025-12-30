@@ -3,6 +3,8 @@
 # https://gqlgen.com/getting-started/
 
 scalar DateTime
+# Upload scalar (provided by gqlgen)
+scalar Upload
 
 input CreateTodoInput {
   description: String!
@@ -29,8 +31,39 @@ type CreateTodoPayload {
   error: FieldError!
 }
 
+# Input for file upload (if needed for metadata)
+input FileUploadInput {
+  originalName: String!
+  contentType: String!
+}
+
+
+# File type
+type File {
+  id: ID!
+  fileName: String!
+  originalName: String!
+  contentType: String!
+  fileSize: Int!
+  fileHash: String
+  storagePath: String
+  createdAt: String!
+}
+
+# File upload response
+type FileUploadResponse {
+  id: ID!
+  fileName: String!
+  originalName: String!
+  contentType: String!
+  fileSize: Int!
+  fileHash: String
+  uploadedAt: String!
+}
+
 type Mutation {
   createTodo(input: CreateTodoInput!): CreateTodoPayload!
+  uploadFile(file: Upload!): FileUploadResponse!
 }
 
 type SearchResult {
@@ -44,5 +77,14 @@ type Query {
   todos: [Todo!]!
   todo(id: ID!): Todo
   searchTodos(query: String!, offset: Int! = 0, limit: Int! = 10): SearchResult!
+  getFile(id: ID!): File
+  listFiles(limit: Int, offset: Int): [File!]!
 
 }
+
+
+
+
+
+
+

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	// "database/sql"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,8 +13,9 @@ import (
 	"todo-service/internal/infrastructure/migration"
 
 	// "todo-service/internal/infrastructure/repository"
-	"todo-service/internal/infrastructure/storage"
-	"todo-service/internal/infrastructure/stream"
+	"todo-service/internal/repository/storage"
+	"todo-service/internal/repository/stream"
+	fileUseCase "todo-service/internal/usecase/file"
 	todoUseCase "todo-service/internal/usecase/todo"
 
 	"git.ice.global/packages/hitrix"
@@ -31,7 +33,8 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 
 	beeORMentity "todo-service/internal/repository/beeorm"
-	"todo-service/internal/repository/beeorm/repository"
+	beeORMRepo "todo-service/internal/repository/beeorm/repository"
+	fileRepo "todo-service/internal/repository/file"
 	redisSearch "todo-service/internal/repository/search/redis"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -96,9 +99,12 @@ func cmd() {
 
 	ormengine := service.DI().OrmEngine()
 
+	// TODO: Must change, now temporary
+	// db1 := *sql.DB
+
 	// Initialize repositories
-	todoRepo := repository.NewOrmEngine(ormengine)
-	// fileRepo := repository.NewFileRepository(db)
+	todoRepo := beeORMRepo.NewOrmEngine(ormengine)
+	fileRepo := fileRepo.NewFileRepository(nil)// MUST CHANGE
 
 	log.Info().Msgf("S3_BUCKET=%s, S3_ENDPOINT=%s", s3Bucket, s3Endpoint)
 
@@ -113,7 +119,7 @@ func cmd() {
 
 	// Initialize use cases
 	todoUC := todoUseCase.NewTodoUseCase(todoRepo, s3Repo, redisRepo, newRedisSearch, os.Getenv("S3_BUCKET"))
-	// fileUC := usecase.NewFileUseCase(fileRepo, s3Repo, s3Bucket)
+	fileUC := fileUseCase.NewFileUseCase(fileRepo, s3Repo, s3Bucket)
 
 	// Convert port to uint for hitrix
 	portNum, err := strconv.ParseUint(APP_PORT, 10, 32)
@@ -125,7 +131,7 @@ func cmd() {
 	executableSchema := graphqlH.NewExecutableSchema(graphqlH.Config{
 		Resolvers: &graphqlH.Resolver{
 			TodoUseCase: todoUC,
-			// FileUseCase: fileUC,
+			FileUseCase: fileUC,
 		},
 	})
 

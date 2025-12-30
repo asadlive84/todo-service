@@ -7,6 +7,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 	"todo-service/internal/domain/dto"
@@ -33,4 +34,9 @@ func (r *queryResolver) Todo(ctx context.Context, id string) (*dto.Todo, error) 
 	}
 
 	return s, nil
+}
+
+// Todos is the resolver for the todos field.
+func (r *queryResolver) Todos(ctx context.Context) ([]*dto.Todo, error) {
+	panic(fmt.Errorf("not implemented: Todos - todos"))
 }

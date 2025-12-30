@@ -18,6 +18,32 @@ type FieldError struct {
 	Message string `json:"message"`
 }
 
+type File struct {
+	ID           string  `json:"id"`
+	FileName     string  `json:"fileName"`
+	OriginalName string  `json:"originalName"`
+	ContentType  string  `json:"contentType"`
+	FileSize     int32   `json:"fileSize"`
+	FileHash     *string `json:"fileHash,omitempty"`
+	StoragePath  *string `json:"storagePath,omitempty"`
+	CreatedAt    string  `json:"createdAt"`
+}
+
+type FileUploadInput struct {
+	OriginalName string `json:"originalName"`
+	ContentType  string `json:"contentType"`
+}
+
+type FileUploadResponse struct {
+	ID           string  `json:"id"`
+	FileName     string  `json:"fileName"`
+	OriginalName string  `json:"originalName"`
+	ContentType  string  `json:"contentType"`
+	FileSize     int32   `json:"fileSize"`
+	FileHash     *string `json:"fileHash,omitempty"`
+	UploadedAt   string  `json:"uploadedAt"`
+}
+
 type Mutation struct {
 }
 

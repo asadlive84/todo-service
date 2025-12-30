@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
-	"todo-service/internal/usecase"
 
 	"github.com/gorilla/mux"
 
@@ -13,10 +12,10 @@ import (
 
 type Http struct {
 	todoUC port.TodoUseCasePort
-	fileUC *usecase.FileUseCase
+	fileUC port.FileUseCasePort
 }
 
-func NewHandler(todoUC port.TodoUseCasePort, fileUC *usecase.FileUseCase) *Http {
+func NewHandler(todoUC port.TodoUseCasePort, fileUC port.FileUseCasePort) *Http {
 	return &Http{todoUC: todoUC, fileUC: fileUC}
 }
 

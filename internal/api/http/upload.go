@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"todo-service/internal/domain/entity"
 )
 
 func (h *Http) Upload(w http.ResponseWriter, r *http.Request) {
@@ -33,12 +34,14 @@ func (h *Http) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := h.fileUC.UploadFile(
-		r.Context(),
-		handler.Filename,
-		fileContent,
-		handler.Header.Get("Content-Type"),
-	)
+	fileResponse := &entity.File{
+		FileName:    handler.Filename,
+		ContentType: handler.Header.Get("Content-Type"),
+		FileContent: fileContent,
+	}
+
+	err = h.fileUC.UploadFile(r.Context(), fileResponse)
+
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Upload failed: %v", err), http.StatusInternalServerError)
 		return
@@ -46,5 +49,5 @@ func (h *Http) Upload(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(fileResponse)
 }

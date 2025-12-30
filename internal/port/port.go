@@ -3,6 +3,7 @@ package port
 import (
 	"context"
 	"time"
+	"todo-service/internal/domain/entity"
 	domain "todo-service/internal/domain/entity"
 )
 
@@ -12,9 +13,24 @@ type TodoUseCasePort interface {
 	Search(ctx context.Context, query string, offset int32, limit int32) ([]*domain.TodoItem, int64, error)
 }
 
+type FileUseCasePort interface {
+	// CreateFile(ctx context.Context, file *entity.File) error
+	// GetFileByID(ctx context.Context, id string) (*entity.File, error)
+	ValidateFileID(ctx context.Context, fileID string) (bool, error)
+	UploadFile(ctx context.Context, file *entity.File) error
+}
+
+//==========
+
 type TodoRepoPort interface {
 	Create(ctx context.Context, todo *domain.TodoItem) error
 	GetByID(ctx context.Context, id int) (*domain.TodoItem, error)
+}
+
+type FileRepoPort interface {
+	CreateFile(ctx context.Context, file *entity.File) error
+	GetFileByID(ctx context.Context, id string) (*entity.File, error)
+	// ValidateFileID(ctx context.Context, fileID string) (bool, error)
 }
 
 type SearchRepo interface {

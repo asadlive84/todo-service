@@ -1,4 +1,4 @@
-package repository
+package file
 
 import (
 	"context"
@@ -6,14 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"todo-service/internal/domain/entity"
-	iface "todo-service/internal/port"
 )
 
 type FileRepository struct {
 	db *sql.DB
 }
 
-func NewFileRepository(db *sql.DB) iface.FileRepository {
+func NewFileRepository(db *sql.DB) *FileRepository {
 	return &FileRepository{db: db}
 }
 

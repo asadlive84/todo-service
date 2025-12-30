@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"todo-service/internal/infrastructure/helper"
+	"todo-service/internal/helper"
 
 	"git.ice.global/packages/beeorm/v4"
 	"git.ice.global/packages/hitrix/service"

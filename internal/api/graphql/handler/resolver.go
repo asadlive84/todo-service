@@ -11,5 +11,5 @@ import "todo-service/internal/port"
 
 type Resolver struct {
 	TodoUseCase port.TodoUseCasePort
-	// Search      port.SearchRepo
+	FileUseCase port.FileUseCasePort
 }

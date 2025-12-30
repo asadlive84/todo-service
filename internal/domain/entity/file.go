@@ -1,33 +1,46 @@
 package entity
 
 import (
+	"errors"
+	"fmt"
 	"time"
 )
 
 type File struct {
-	ID           string    `json:"id"`
-	FileName     string    `json:"fileName"`
-	OriginalName string    `json:"originalName"`
-	ContentType  string    `json:"contentType"`
-	FileSize     int64     `json:"fileSize"`
-	FileHash     string    `json:"fileHash,omitempty"`
-	StoragePath  string    `json:"storagePath,omitempty"`
-	CreatedAt    time.Time `json:"createdAt"`
-}
-
-type FileUploadRequest struct {
+	ID           string
+	FileName     string
 	OriginalName string
 	ContentType  string
+	FileContent  []byte
 	FileSize     int64
-	UploadedBy   string
+	FileHash     string
+	StoragePath  string
+	CreatedAt    time.Time
+	MaxFileSize  int64
 }
 
-type FileUploadResponse struct {
-	ID           string    `json:"id"`
-	FileName     string    `json:"fileName"`
-	OriginalName string    `json:"originalName"`
-	ContentType  string    `json:"contentType"`
-	FileSize     int64     `json:"fileSize"`
-	FileHash     string    `json:"fileHash,omitempty"`
-	UploadedAt   time.Time `json:"uploadedAt"`
+func (f *File) Validate() error {
+	if int64(len(f.FileContent)) > f.MaxFileSize {
+		return fmt.Errorf("file too large: max size is %d bytes", f.MaxFileSize)
+	}
+
+	if !f.isAllowedContentType(f.ContentType) {
+		return errors.New("invalid file type: only image/* and text/* are allowed")
+	}
+
+	return nil
+
+}
+
+func (f *File) isAllowedContentType(contentType string) bool {
+	allowedTypes := map[string]bool{
+		"image/jpeg":      true,
+		"image/png":       true,
+		"image/gif":       true,
+		"image/webp":      true,
+		"text/plain":      true,
+		"text/csv":        true,
+		"application/pdf": true,
+	}
+	return allowedTypes[contentType]
 }
