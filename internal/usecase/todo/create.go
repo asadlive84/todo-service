@@ -3,7 +3,6 @@ package todo
 import (
 	"context"
 	"fmt"
-	"log"
 	"todo-service/internal/domain/entity"
 )
 
@@ -22,12 +21,9 @@ func (uc *TodoUseCase) Create(ctx context.Context, todo *entity.TodoItem) error 
 		return fmt.Errorf("failed to publish todo: %w", err)
 	}
 
-	// redisSearch := service.DI().RedisSearch()
-	// err := redisSearch.IndexTodo(ctx, uint64(todo.ID), todo.Description, todo.FileID, todo.DueDate, todo.CreatedAt)
-
 	err := uc.search.IndexTodo(ctx, uint64(todo.ID), todo.Description, todo.FileID, todo.DueDate, todo.CreatedAt)
 	if err != nil {
-		log.Printf("Failed to index todo: %v", err)
+		return fmt.Errorf("failed to index redis search todo: %w", err)
 	}
 
 	return nil

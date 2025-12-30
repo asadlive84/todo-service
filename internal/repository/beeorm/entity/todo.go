@@ -19,12 +19,14 @@ type TodoEntity struct {
 
 // Mapper: domain → BeeORM
 func ToOrmEntity(todo *domain.TodoItem) *TodoEntity {
+
 	return &TodoEntity{
-		ID:          uint64(todo.ID),
+		// ID:          uint64(todo.ID),
 		Description: todo.Description,
 		DueDate:     todo.DueDate,
 		FileID:      todo.FileID,
 		CreatedAt:   todo.CreatedAt,
+		
 	}
 }
 

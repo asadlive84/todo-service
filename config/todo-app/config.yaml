@@ -23,11 +23,11 @@ DATABASE:
     PORT: 3306
     DATABASE_NAME: hitrix_test
 
-  REDIS:
-    REDIS_HOST: redis
-    REDIS_PORT: 6379
-    REDIS_ADDR: redis:6379
-    REDIS_STREAM: todos
+REDIS:
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_ADDR: localhost:6379
+  REDIS_STREAM: todos:events
 
 S3:
   S3_ENDPOINT: http://localstack:4566

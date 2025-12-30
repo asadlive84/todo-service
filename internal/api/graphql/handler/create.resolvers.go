@@ -22,6 +22,5 @@ func (r *mutationResolver) CreateTodo(ctx context.Context, input dto.CreateTodoI
 	if err := r.TodoUseCase.Create(ctx, todoItem); err != nil {
 		return nil, err
 	}
-
 	return mapper.EntityToPayload(todoItem), nil
 }

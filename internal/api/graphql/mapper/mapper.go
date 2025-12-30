@@ -29,6 +29,8 @@ func InputToEntity(input dto.CreateTodoInput) (*entity.TodoItem, error) {
 
 // EntityToPayload converts TodoItem (Domain Entity) to CreateTodoPayload (DTO)
 func EntityToPayload(todoItem *entity.TodoItem) *dto.CreateTodoPayload {
+
+	fmt.Println("======todoItem======>", todoItem)
 	return &dto.CreateTodoPayload{
 		Todo: &dto.Todo{
 			ID:          int32(todoItem.ID),

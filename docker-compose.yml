@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack:latest
     container_name: todo-redis
     ports:
       - "${REDIS_PORT}:6379"

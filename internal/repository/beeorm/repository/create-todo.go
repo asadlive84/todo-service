@@ -21,7 +21,10 @@ func (r *OrmEngine) Create(ctx context.Context, todo *domain.TodoItem) (err erro
 	}()
 
 	ormEntity := entity.ToOrmEntity(todo)
+
 	r.orm.Flush(ormEntity)
+
+	todo.ID = int(ormEntity.ID)
 
 	return nil
 }

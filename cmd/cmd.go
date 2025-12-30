@@ -11,6 +11,7 @@ import (
 	"time"
 	graphqlH "todo-service/internal/api/graphql/handler"
 	"todo-service/internal/infrastructure/migration"
+	"todo-service/internal/infrastructure/redis"
 
 	// "todo-service/internal/infrastructure/repository"
 	"todo-service/internal/repository/storage"
@@ -70,6 +71,11 @@ func cmd() {
 
 	APP_PORT := configService.DefString("server.port", "8080")
 
+	REDIS_ADDR := configService.DefString("REDIS.REDIS_ADDR", "localhost:6379")
+	REDIS_STREAM := configService.DefString("REDIS.REDIS_STREAM", "todos:events")
+
+	//os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_STREAM")
+
 	s3Endpoint := configService.DefString("S3.S3_ENDPOINT", "http://localstack:4566")
 	s3Bucket := configService.DefString("S3.S3_BUCKET", "todo-bucket")
 
@@ -104,7 +110,7 @@ func cmd() {
 
 	// Initialize repositories
 	todoRepo := beeORMRepo.NewOrmEngine(ormengine)
-	fileRepo := fileRepo.NewFileRepository(nil)// MUST CHANGE
+	fileRepo := fileRepo.NewFileRepository(nil) // MUST CHANGE
 
 	log.Info().Msgf("S3_BUCKET=%s, S3_ENDPOINT=%s", s3Bucket, s3Endpoint)
 
@@ -113,7 +119,12 @@ func cmd() {
 		log.Fatal().Err(err).Msg("Failed to initialize S3")
 	}
 
-	redisRepo := stream.NewRedisStreamRepository(os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_STREAM"))
+	fmt.Println("=======REDIS_ADDR=====>", REDIS_ADDR)
+	fmt.Println("=======REDIS_STREAM=====>", REDIS_STREAM)
+
+	redis.InitRedis(REDIS_ADDR)
+
+	redisRepo := stream.NewRedisStreamRepository(REDIS_ADDR, REDIS_STREAM)
 
 	newRedisSearch := redisSearch.NewRedisSearchService()
 
