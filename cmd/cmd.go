@@ -49,7 +49,7 @@ func cmd() {
 		"todo-app", "your secret",
 	).RegisterDIGlobalService(
 		registry.ServiceProviderErrorLogger(),
-		registry.ServiceProviderConfigDirectory("./config"),
+		registry.ServiceProviderConfigDirectory("/app/config"),
 		registry.ServiceProviderOrmRegistry(beeORMentity.Init),
 		registry.ServiceProviderOrmEngine(),
 		registry.ServiceProviderJWT(),

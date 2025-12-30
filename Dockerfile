@@ -5,6 +5,7 @@ WORKDIR /app
 RUN apk add --no-cache git make
 
 COPY go.mod go.sum ./
+# COPY config ./
 
 RUN go mod download
 
@@ -22,6 +23,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates curl
 
 COPY --from=builder /app/todo-app .
+COPY --from=builder /app/config ./config 
 
 COPY migrations ./migrations
 

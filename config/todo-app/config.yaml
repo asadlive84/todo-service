@@ -1,8 +1,8 @@
 # config/config.yaml
 orm:
   default:
-    mysql: user:password@tcp(localhost:3306)/hitrix_test?charset=utf8mb4&parseTime=True
-    redis: localhost:6379:0
+    mysql: user:password@tcp(mysql:3306)/hitrix_test?charset=utf8mb4&parseTime=True
+    redis: redis:6379:0
     locker: default
     local_cache: 1000
 
@@ -19,18 +19,18 @@ DATABASE:
     DRIVER_NAME: mysql
     USER_NAME: user
     PASSWORD: password
-    HOST: localhost
+    HOST: mysql
     PORT: 3306
     DATABASE_NAME: hitrix_test
 
 REDIS:
   REDIS_HOST: redis
   REDIS_PORT: 6379
-  REDIS_ADDR: localhost:6379
+  REDIS_ADDR: redis:6379
   REDIS_STREAM: todos:events
 
 S3:
-  S3_ENDPOINT: http://localhost:4566
+  S3_ENDPOINT: http://localstack:4566
   S3_BUCKET: todo-bucket
 
 AWS:
