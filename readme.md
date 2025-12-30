@@ -527,5 +527,5 @@ docker exec -it <redis-container-id> redis-cli
 
 then enter the redis cli and give this command for check stream message
 ```bash
-XRANGE todos - +
+XRANGE todos:events - +
 ```
