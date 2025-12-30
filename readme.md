@@ -458,31 +458,21 @@ make generate-mocks
 ### Project structure.
 
 ```
-todo-service/
-├── cmd/
-│   └── main.go                 # Application entry point
-|   └── cmd.go             
-├── internal/
-│   ├── domain/
-│   │   ├── entity/            # Domain models
-│   │   └── interface/         # Service interfaces
-│   ├── usecase/               # Business logic
-│   ├── handler/               # HTTP handlers
-│   └── infrastructure/        # Implementation
-│       ├── repository/        # Database operations
-│       ├── storage/           # S3 storage
-│       ├── stream/            # Redis streaming
-│       ├── migration/         # Database migrations
-│       └── helper/            # Utility functions
-├── test/
-│   ├── unit/                  # Unit tests
-│   ├── bench/                 # Benchmarks
-│   └── mock/                  # Mock implementations
-├── migrations/                # SQL migration files
-├── docker-compose.yml         # Docker services
-├── Dockerfile                 # Go app container
-├── go.mod & go.sum            # Dependencies
-└── README.md                  # This file
+
+## Project Structure
+
+```text
+cmd/                Application entry point
+config/             Configuration files
+internal/
+  api/              GraphQL & HTTP handlers
+  domain/           Entities and DTOs
+  usecase/          Business logic
+  repository/       Database, Redis, storage implementations
+  infrastructure/   Migrations, Redis setup
+migrations/         SQL migrations
+docker-compose.yml  Local development setup
+Dockerfile          Application container
 ```
 
 
