@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	iface "todo-service/internal/port"
+	iface "todo-service/internal/interface"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"

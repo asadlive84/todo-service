@@ -7,7 +7,7 @@ package handler
 // It serves as dependency injection for your app, add any dependencies you require
 // here.
 
-import "todo-service/internal/port"
+import "todo-service/internal/interface"
 
 type Resolver struct {
 	TodoUseCase port.TodoUseCasePort
