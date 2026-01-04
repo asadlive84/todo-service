@@ -3,10 +3,8 @@ package redis
 import (
 	"context"
 	"fmt"
-	// "todo-service/internal/helper"
 
 	"git.ice.global/packages/beeorm/v4"
-	// "git.ice.global/packages/hitrix/service"
 
 	"todo-service/internal/domain/entity"
 	beeORMentity "todo-service/internal/repository/beeorm/entity"

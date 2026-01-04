@@ -9,27 +9,6 @@ import (
 	"git.ice.global/packages/hitrix/service"
 )
 
-// func Init(registry *beeorm.Registry) {
-// 	configService := service.DI().Config()
-// 	REDIS_ADDR := configService.DefString("REDIS.REDIS_ADDR", "localhost:6379")
-// 	// REDIS_STREAM := configService.DefString("REDIS.REDIS_STREAM", "todos:events")
-
-// 	registry.RegisterEntity(
-// 		&e.TodoEntity{},
-// 		&e.FileEnity{},
-// 	)
-// 	registry.RegisterEntity(&entity.RequestLoggerEntity{})
-
-// 	registry.RegisterRedis(REDIS_ADDR, "", 0, "cache")
-
-// 	registry.RegisterRedisStream("beeorm.fid", "cache", nil)
-
-// 	// registry.RegisterRedis(REDIS_ADDR, "", 0, "search")
-
-// 	log.Println("BeeORM initialized successfully")
-
-// }
-
 func Init(registry *beeorm.Registry) {
 	configService := service.DI().Config()
 	REDIS_ADDR := configService.DefString("REDIS.REDIS_ADDR", "localhost:6379")

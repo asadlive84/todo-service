@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	iface "todo-service/internal/interface"
+	iface "todo-service/internal/domain/interface"
 )
 
 const MaxFileSize = 50000

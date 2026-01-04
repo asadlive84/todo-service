@@ -52,3 +52,25 @@ func ToModels(todos []*entity.TodoItem) []*beeOrmEntity.TodoEntity {
 	}
 	return models
 }
+
+// Mapper: domain → BeeORM
+func ToOrmEntity(todo *entity.TodoItem) *beeOrmEntity.TodoEntity {
+
+	return &beeOrmEntity.TodoEntity{
+		Description: todo.Description,
+		DueDate:     todo.DueDate,
+		FileID:      todo.FileID,
+		CreatedAt:   todo.CreatedAt,
+	}
+}
+
+// Mapper: BeeORM → domain
+func ToDomainEntity(ormTodo *beeOrmEntity.TodoEntity) *entity.TodoItem {
+	return &entity.TodoItem{
+		ID:          int(ormTodo.ID),
+		Description: ormTodo.Description,
+		DueDate:     ormTodo.DueDate,
+		FileID:      ormTodo.FileID,
+		CreatedAt:   ormTodo.CreatedAt,
+	}
+}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	domain "todo-service/internal/domain/entity"
-	"todo-service/internal/repository/beeorm/entity"
+	"todo-service/internal/repository/beeorm/mapper"
 )
 
 func (r *OrmEngine) Create(ctx context.Context, todo *domain.TodoItem) (err error) {
@@ -20,7 +20,7 @@ func (r *OrmEngine) Create(ctx context.Context, todo *domain.TodoItem) (err erro
 		}
 	}()
 
-	ormEntity := entity.ToOrmEntity(todo)
+	ormEntity := mapper.ToOrmEntity(todo)
 
 	r.orm.Flush(ormEntity)
 

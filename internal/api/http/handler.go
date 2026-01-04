@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	port "todo-service/internal/interface"
+	port "todo-service/internal/domain/interface"
 )
 
 type Http struct {

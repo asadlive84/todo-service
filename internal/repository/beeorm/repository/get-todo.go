@@ -6,6 +6,7 @@ import (
 
 	domain "todo-service/internal/domain/entity"
 	"todo-service/internal/repository/beeorm/entity"
+	"todo-service/internal/repository/beeorm/mapper"
 )
 
 func (r *OrmEngine) GetByID(ctx context.Context, id int) (todo *domain.TodoItem, err error) {
@@ -25,5 +26,5 @@ func (r *OrmEngine) GetByID(ctx context.Context, id int) (todo *domain.TodoItem,
 
 	r.orm.LoadByID(uint64(id), en)
 
-	return entity.ToDomainEntity(en), nil
+	return mapper.ToDomainEntity(en), nil
 }

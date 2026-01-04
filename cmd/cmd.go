@@ -108,8 +108,7 @@ func cmd() {
 		log.Printf("Executing Alter on [%s]: %s", alter.Pool, alter.SQL)
 		alter.Exec()
 	}
-	// TODO: Must change, now temporary
-	// db1 := *sql.DB
+
 
 	dsn := fmt.Sprintf(
 

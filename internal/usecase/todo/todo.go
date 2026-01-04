@@ -1,7 +1,7 @@
 package todo
 
 import (
-	port "todo-service/internal/interface"
+	port "todo-service/internal/domain/interface"
 )
 
 const MaxFileSize = 5 << 20 // 5MB
