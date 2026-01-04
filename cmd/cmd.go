@@ -15,6 +15,7 @@ import (
 	"todo-service/internal/infrastructure/migration"
 
 	// "todo-service/internal/infrastructure/repository"
+	e "todo-service/internal/repository/beeorm/entity"
 	"todo-service/internal/repository/storage"
 	"todo-service/internal/repository/stream"
 	fileUseCase "todo-service/internal/usecase/file"
@@ -143,6 +144,7 @@ func cmd() {
 	db.SetConnMaxLifetime(5 * time.Minute)
 
 	StartBackgroundWorker(ormengine)
+	InitSearchIndex(ormengine)
 
 	// Initialize repositories
 	todoRepo := beeORMRepo.NewOrmEngine(ormengine)
@@ -270,4 +272,16 @@ func StartBackgroundWorker(engine *beeorm.Engine) {
 		log.Print("Background Consumer is starting to digest...")
 		handler.Digest(context.Background())
 	}()
+}
+
+func InitSearchIndex(engine *beeorm.Engine) {
+	schema := engine.GetRegistry().GetTableSchemaForEntity(&e.TodoEntity{})
+
+	schema.ReindexRedisSearchIndex(engine)
+
+	log.Print("RedisSearch Index has been re-created automatically!")
+
+	engine.GetRegistry().GetTableSchemaForEntity(&e.TodoEntity{}).ReindexRedisSearchIndex(engine)
+
+	log.Print("RedisSearch index is ready!")
 }
