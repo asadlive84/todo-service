@@ -10,6 +10,6 @@ package handler
 import "todo-service/internal/domain/interface"
 
 type Resolver struct {
-	TodoUseCase port.TodoUseCasePort
-	FileUseCase port.FileUseCasePort
+	TodoUseCase port.TodoUseCase
+	FileUseCase port.FileUseCase
 }

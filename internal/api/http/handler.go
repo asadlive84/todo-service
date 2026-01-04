@@ -11,11 +11,11 @@ import (
 )
 
 type Http struct {
-	todoUC port.TodoUseCasePort
-	fileUC port.FileUseCasePort
+	todoUC port.TodoUseCase
+	fileUC port.FileUseCase
 }
 
-func NewHandler(todoUC port.TodoUseCasePort, fileUC port.FileUseCasePort) *Http {
+func NewHandler(todoUC port.TodoUseCase, fileUC port.FileUseCase) *Http {
 	return &Http{todoUC: todoUC, fileUC: fileUC}
 }
 

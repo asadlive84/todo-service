@@ -7,13 +7,13 @@ import (
 const MaxFileSize = 50000
 
 type FileUseCase struct {
-	fileRepo iface.FileRepoPort
-	todoRepo iface.TodoRepoPort
+	fileRepo iface.FileRepo
+	todoRepo iface.TodoRepo
 	s3Repo   iface.S3Repository
 	bucket   string
 }
 
-func NewFileUseCase(fileRepo iface.FileRepoPort, todoRepo iface.TodoRepoPort, s3Repo iface.S3Repository, bucket string) *FileUseCase {
+func NewFileUseCase(fileRepo iface.FileRepo, todoRepo iface.TodoRepo, s3Repo iface.S3Repository, bucket string) *FileUseCase {
 	return &FileUseCase{
 		fileRepo: fileRepo,
 		todoRepo: todoRepo,

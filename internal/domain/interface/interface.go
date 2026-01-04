@@ -7,13 +7,13 @@ import (
 	domain "todo-service/internal/domain/entity"
 )
 
-type TodoUseCasePort interface {
+type TodoUseCase interface {
 	Create(ctx context.Context, todo *domain.TodoItem) error
 	GetByID(ctx context.Context, id int) (*domain.TodoItem, error)
 	Search(ctx context.Context, query string, offset int32, limit int32) ([]*domain.TodoItem, int64, error)
 }
 
-type FileUseCasePort interface {
+type FileUseCase interface {
 	// CreateFile(ctx context.Context, file *entity.File) error
 	// GetFileByID(ctx context.Context, id string) (*entity.File, error)
 	ValidateFileID(ctx context.Context, fileID string) (bool, error)
@@ -22,13 +22,13 @@ type FileUseCasePort interface {
 
 //==========
 
-type TodoRepoPort interface {
+type TodoRepo interface {
 	Create(ctx context.Context, todo *domain.TodoItem) error
 	GetByID(ctx context.Context, id int) (*domain.TodoItem, error)
 	CreateFile(ctx context.Context, file *domain.File) error
 }
 
-type FileRepoPort interface {
+type FileRepo interface {
 	GetFileByID(ctx context.Context, id string) (*entity.File, error)
 }
 
