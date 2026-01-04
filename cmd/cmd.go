@@ -15,9 +15,8 @@ import (
 	"todo-service/internal/infrastructure/migration"
 
 	// "todo-service/internal/infrastructure/repository"
+	"todo-service/internal/infrastructure/storage"
 	e "todo-service/internal/repository/beeorm/entity"
-	"todo-service/internal/repository/storage"
-	"todo-service/internal/repository/stream"
 	fileUseCase "todo-service/internal/usecase/file"
 	todoUseCase "todo-service/internal/usecase/todo"
 
@@ -74,8 +73,8 @@ func cmd() {
 
 	APP_PORT := configService.DefString("server.port", "8080")
 
-	REDIS_ADDR := configService.DefString("REDIS.REDIS_ADDR", "localhost:6379")
-	REDIS_STREAM := configService.DefString("REDIS.REDIS_STREAM", "todos:events")
+	// REDIS_ADDR := configService.DefString("REDIS.REDIS_ADDR", "localhost:6379")
+	// REDIS_STREAM := configService.DefString("REDIS.REDIS_STREAM", "todos:events")
 
 	s3Endpoint := configService.DefString("S3.S3_ENDPOINT", "http://localstack:4566")
 	s3Bucket := configService.DefString("S3.S3_BUCKET", "todo-bucket")
@@ -159,12 +158,10 @@ func cmd() {
 
 	// redis.InitRedis(REDIS_ADDR)
 
-	redisRepo := stream.NewRedisStreamRepository(REDIS_ADDR, REDIS_STREAM)
-
 	newRedisSearch := redisSearch.NewRedisSearchService(ormengine)
 
 	// Initialize use cases
-	todoUC := todoUseCase.NewTodoUseCase(todoRepo, s3Repo, redisRepo, newRedisSearch, s3Bucket)
+	todoUC := todoUseCase.NewTodoUseCase(todoRepo, s3Repo, newRedisSearch, s3Bucket)
 	fileUC := fileUseCase.NewFileUseCase(fileRepo, todoRepo, s3Repo, s3Bucket)
 
 	// Convert port to uint for hitrix

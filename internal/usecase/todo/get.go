@@ -17,9 +17,6 @@ func (uc *TodoUseCase) GetByID(ctx context.Context, id int) (*entity.TodoItem, e
 		return nil, fmt.Errorf("failed to create todo: %w", err)
 
 	}
-	// if err := uc.redisRepo.PublishTodo(ctx, todo); err != nil {
-	// 	return nil, fmt.Errorf("failed to publish todo: %w", err)
-	// }
 
 	return entity, nil
 }
