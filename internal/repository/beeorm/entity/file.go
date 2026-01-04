@@ -8,10 +8,10 @@ import (
 )
 
 type FileEnity struct {
-	beeorm.ORM   `orm:"table=files;redisCache"`
-	ID           uint64 `orm:"pk"`
-	FileName     string
-	OriginalName string
+	beeorm.ORM   `orm:"table=files;redis=file_cache;redisCache;redisSearch=file_search;dirty=files.events"`
+	ID           uint64 `orm:"pk;searchable;sortable"`
+	FileName     string `orm:"searchable"`
+	OriginalName string `orm:"searchable"`
 	ContentType  string
 	FileSize     int64
 	FileHash     string
@@ -21,7 +21,6 @@ type FileEnity struct {
 
 // Mapper: domain → BeeORM
 func ToFileEnityOrmEntity(file *domain.File) *FileEnity {
-
 	now := time.Now().UTC()
 	return &FileEnity{
 		FileName:     file.FileName,

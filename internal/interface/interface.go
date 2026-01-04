@@ -3,7 +3,6 @@ package port
 import (
 	"context"
 	"io"
-	"time"
 	"todo-service/internal/domain/entity"
 	domain "todo-service/internal/domain/entity"
 )
@@ -34,9 +33,9 @@ type FileRepoPort interface {
 }
 
 type SearchRepo interface {
-	CreateTodoIndex(ctx context.Context) error
-	IndexTodo(ctx context.Context, todoID uint64, description, fileID string, dueDate, createdAt time.Time) error
-	SearchTodos(ctx context.Context, query string, offset, limit int) ([]map[string]interface{}, int64, error)
+	// CreateTodoIndex(ctx context.Context) error
+	// IndexTodo(ctx context.Context, todoID uint64, description, fileID string, dueDate, createdAt time.Time) error
+	SearchTodos(ctx context.Context, query string, offset, limit int) ([]*entity.TodoItem, error)
 	// ParseSearchResults(result interface{}) ([]map[string]interface{}, int64, error)
 }
 

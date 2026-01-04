@@ -13,7 +13,6 @@ import (
 	"time"
 	graphqlH "todo-service/internal/api/graphql/handler"
 	"todo-service/internal/infrastructure/migration"
-	"todo-service/internal/infrastructure/redis"
 
 	// "todo-service/internal/infrastructure/repository"
 	"todo-service/internal/repository/storage"
@@ -21,6 +20,7 @@ import (
 	fileUseCase "todo-service/internal/usecase/file"
 	todoUseCase "todo-service/internal/usecase/todo"
 
+	"git.ice.global/packages/beeorm/v4"
 	"git.ice.global/packages/hitrix"
 	"git.ice.global/packages/hitrix/pkg/middleware"
 	"git.ice.global/packages/hitrix/service"
@@ -103,6 +103,11 @@ func cmd() {
 
 	ormengine := service.DI().OrmEngine()
 
+	alters := ormengine.GetAlters()
+	for _, alter := range alters {
+		log.Printf("Executing Alter on [%s]: %s", alter.Pool, alter.SQL)
+		alter.Exec()
+	}
 	// TODO: Must change, now temporary
 	// db1 := *sql.DB
 
@@ -137,6 +142,8 @@ func cmd() {
 
 	db.SetConnMaxLifetime(5 * time.Minute)
 
+	StartBackgroundWorker(ormengine)
+
 	// Initialize repositories
 	todoRepo := beeORMRepo.NewOrmEngine(ormengine)
 	fileRepo := fileRepo.NewFileRepository(db) // MUST CHANGE
@@ -148,11 +155,11 @@ func cmd() {
 		log.Fatal().Err(err).Msg("Failed to initialize S3")
 	}
 
-	redis.InitRedis(REDIS_ADDR)
+	// redis.InitRedis(REDIS_ADDR)
 
 	redisRepo := stream.NewRedisStreamRepository(REDIS_ADDR, REDIS_STREAM)
 
-	newRedisSearch := redisSearch.NewRedisSearchService()
+	newRedisSearch := redisSearch.NewRedisSearchService(ormengine)
 
 	// Initialize use cases
 	todoUC := todoUseCase.NewTodoUseCase(todoRepo, s3Repo, redisRepo, newRedisSearch, s3Bucket)
@@ -175,11 +182,11 @@ func cmd() {
 	ctx := context.Background()
 	// redisSearch := customService.DI().RedisSearch()
 
-	if err := newRedisSearch.CreateTodoIndex(ctx); err != nil {
-		log.Error().Err(err).Msg("Failed to create search index")
-	} else {
-		log.Info().Msg("Search index created successfully")
-	}
+	// if err := newRedisSearch.CreateTodoIndex(ctx); err != nil {
+	// 	log.Error().Err(err).Msg("Failed to create search index")
+	// } else {
+	// 	log.Info().Msg("Search index created successfully")
+	// }
 
 	// Setup graceful shutdown
 	quit := make(chan os.Signal, 1)
@@ -236,4 +243,31 @@ func gqlSetup(srv *handler.Server) {
 		Cache: lru.New[string](100),
 	})
 
+}
+
+// func StartBackgroundWorker(engine *beeorm.Engine) {
+// 	go func() {
+// 		handler := beeorm.NewBackgroundConsumer(engine)
+// 		log.Print("BeeORM Background Consumer is running...")
+
+// 		for {
+// 			handler.Digest(context.Background())
+
+// 			time.Sleep(time.Millisecond * 100)
+// 		}
+// 	}()
+// }
+
+func StartBackgroundWorker(engine *beeorm.Engine) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Consumer Panic: %v", r)
+			}
+		}()
+
+		handler := beeorm.NewBackgroundConsumer(engine)
+		log.Print("Background Consumer is starting to digest...")
+		handler.Digest(context.Background())
+	}()
 }
