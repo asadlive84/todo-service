@@ -12,15 +12,16 @@ import (
 	"syscall"
 	"time"
 	graphqlH "todo-service/internal/api/graphql/handler"
+
+	"todo-service/internal/background"
 	"todo-service/internal/infrastructure/migration"
+	"todo-service/internal/worker"
 
 	// "todo-service/internal/infrastructure/repository"
 	"todo-service/internal/infrastructure/storage"
-	e "todo-service/internal/repository/beeorm/entity"
 	fileUseCase "todo-service/internal/usecase/file"
 	todoUseCase "todo-service/internal/usecase/todo"
 
-	"git.ice.global/packages/beeorm/v4"
 	"git.ice.global/packages/hitrix"
 	"git.ice.global/packages/hitrix/pkg/middleware"
 	"git.ice.global/packages/hitrix/service"
@@ -109,7 +110,6 @@ func cmd() {
 		alter.Exec()
 	}
 
-
 	dsn := fmt.Sprintf(
 
 		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
@@ -141,8 +141,16 @@ func cmd() {
 
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	StartBackgroundWorker(ormengine)
-	InitSearchIndex(ormengine)
+	processor := worker.NewOutboxProcessor(ormengine)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go processor.Start(ctx)
+
+	// StartBackgroundWorker(ormengine)
+
+	// InitSearchIndex(ormengine)
 
 	// Initialize repositories
 	todoRepo := beeORMRepo.NewOrmEngine(ormengine)
@@ -177,15 +185,6 @@ func cmd() {
 		},
 	})
 
-	ctx := context.Background()
-	// redisSearch := customService.DI().RedisSearch()
-
-	// if err := newRedisSearch.CreateTodoIndex(ctx); err != nil {
-	// 	log.Error().Err(err).Msg("Failed to create search index")
-	// } else {
-	// 	log.Info().Msg("Search index created successfully")
-	// }
-
 	// Setup graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -212,11 +211,15 @@ func cmd() {
 
 	}()
 
+	s.RunBackgroundProcess(func(b *hitrix.BackgroundProcessor) {
+		b.RunScript(&background.EventConsumer{})
+	})
+
 	// Wait for shutdown signal
 	<-quit
 	log.Info().Msg("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// Add any cleanup logic here if needed
@@ -243,41 +246,14 @@ func gqlSetup(srv *handler.Server) {
 
 }
 
-// func StartBackgroundWorker(engine *beeorm.Engine) {
-// 	go func() {
-// 		handler := beeorm.NewBackgroundConsumer(engine)
-// 		log.Print("BeeORM Background Consumer is running...")
+// func InitSearchIndex(engine *beeorm.Engine) {
+// 	schema := engine.GetRegistry().GetTableSchemaForEntity(&e.TodoEntity{})
 
-// 		for {
-// 			handler.Digest(context.Background())
+// 	schema.ReindexRedisSearchIndex(engine)
 
-// 			time.Sleep(time.Millisecond * 100)
-// 		}
-// 	}()
+// 	log.Print("RedisSearch Index has been re-created automatically!")
+
+// 	engine.GetRegistry().GetTableSchemaForEntity(&e.TodoEntity{}).ReindexRedisSearchIndex(engine)
+
+// 	log.Print("RedisSearch index is ready!")
 // }
-
-func StartBackgroundWorker(engine *beeorm.Engine) {
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("Consumer Panic: %v", r)
-			}
-		}()
-
-		handler := beeorm.NewBackgroundConsumer(engine)
-		log.Print("Background Consumer is starting to digest...")
-		handler.Digest(context.Background())
-	}()
-}
-
-func InitSearchIndex(engine *beeorm.Engine) {
-	schema := engine.GetRegistry().GetTableSchemaForEntity(&e.TodoEntity{})
-
-	schema.ReindexRedisSearchIndex(engine)
-
-	log.Print("RedisSearch Index has been re-created automatically!")
-
-	engine.GetRegistry().GetTableSchemaForEntity(&e.TodoEntity{}).ReindexRedisSearchIndex(engine)
-
-	log.Print("RedisSearch index is ready!")
-}

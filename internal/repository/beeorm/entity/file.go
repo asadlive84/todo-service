@@ -8,7 +8,7 @@ import (
 )
 
 type FileEnity struct {
-	beeorm.ORM   `orm:"table=files;redis=file_cache;redisCache;redisSearch=file_search;dirty=files.events"`
+	beeorm.ORM   `orm:"table=files;redis=file_cache;redisCache;redisSearch=file_search;dirty=files:events"`
 	ID           uint64 `orm:"pk;searchable;sortable"`
 	FileName     string `orm:"searchable"`
 	OriginalName string `orm:"searchable"`

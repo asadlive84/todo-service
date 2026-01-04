@@ -5,26 +5,44 @@ import (
 	"fmt"
 	domain "todo-service/internal/domain/entity"
 	"todo-service/internal/repository/beeorm/mapper"
+
+	"git.ice.global/packages/hitrix/pkg/helper"
 )
 
-func (r *OrmEngine) Create(ctx context.Context, todo *domain.TodoItem) (err error) {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+func (r *OrmEngine) Create(ctx context.Context, todo *domain.TodoItem) error {
+	// Validate
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("context error: %w", err)
+	}
+	if todo == nil {
+		return fmt.Errorf("todo cannot be nil")
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("beeorm flush panic: %v", r)
+	return helper.DBTransaction(r.orm, func() error {
+		// Save Todo
+		ormEntity := mapper.ToOrmTodoEntity(todo)
+		if err := r.orm.FlushWithCheck(ormEntity); err != nil {
+			return fmt.Errorf("failed to save todo: %w", err)
 		}
-	}()
 
-	ormEntity := mapper.ToOrmEntity(todo)
+		// Validate ID
+		if ormEntity.ID == 0 {
+			return fmt.Errorf("todo ID not generated")
+		}
 
-	r.orm.Flush(ormEntity)
+		todo.ID = int(ormEntity.ID)
 
-	todo.ID = int(ormEntity.ID)
+		// Check context
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("context cancelled: %w", err)
+		}
 
-	return nil
+		// Save Outbox
+		todoOutbox := mapper.ToOrmOutboxEntity(todo)
+		if err := r.orm.FlushWithCheck(todoOutbox); err != nil {
+			return fmt.Errorf("failed to save outbox: %w", err)
+		}
+
+		return nil
+	})
 }

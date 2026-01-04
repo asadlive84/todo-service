@@ -1,6 +1,8 @@
 package mapper
 
 import (
+	"encoding/json"
+	"time"
 	"todo-service/internal/domain/entity"
 	beeOrmEntity "todo-service/internal/repository/beeorm/entity"
 )
@@ -54,7 +56,7 @@ func ToModels(todos []*entity.TodoItem) []*beeOrmEntity.TodoEntity {
 }
 
 // Mapper: domain → BeeORM
-func ToOrmEntity(todo *entity.TodoItem) *beeOrmEntity.TodoEntity {
+func ToOrmTodoEntity(todo *entity.TodoItem) *beeOrmEntity.TodoEntity {
 
 	return &beeOrmEntity.TodoEntity{
 		Description: todo.Description,
@@ -73,4 +75,23 @@ func ToDomainEntity(ormTodo *beeOrmEntity.TodoEntity) *entity.TodoItem {
 		FileID:      ormTodo.FileID,
 		CreatedAt:   ormTodo.CreatedAt,
 	}
+}
+
+func ToOrmOutboxEntity(todo *entity.TodoItem) *beeOrmEntity.OutboxEntity {
+	payload, _ := json.Marshal(map[string]interface{}{
+		"id":          todo.ID,
+		"description": todo.Description,
+		"dueDate":     todo.DueDate,
+		"fileID":      todo.FileID,
+		"createdAt":   todo.CreatedAt,
+	})
+
+	outbox := &beeOrmEntity.OutboxEntity{
+		EventType: "todo.created",
+		Payload:   string(payload),
+		Status:    "pending",
+		CreatedAt: time.Now(),
+	}
+
+	return outbox
 }

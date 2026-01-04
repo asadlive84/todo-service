@@ -15,8 +15,11 @@ func Init(registry *beeorm.Registry) {
 
 	registry.RegisterEntity(
 		&e.TodoEntity{},
+		&e.OutboxEntity{},
 		&e.FileEnity{},
 	)
+
+	// registry.RegisterRedisStream("", "todo:events", []string{"todo-consumer-group"})
 
 	registry.RegisterEntity(&entity.RequestLoggerEntity{})
 
@@ -26,8 +29,9 @@ func Init(registry *beeorm.Registry) {
 	registry.RegisterRedis(REDIS_ADDR, "", 0, "todo_search")
 	registry.RegisterRedis(REDIS_ADDR, "", 0, "file_search")
 
-	registry.RegisterRedisStream("todo.events", "todo_cache", nil)
-	registry.RegisterRedisStream("files.events", "file_cache", nil)
+	// registry.RegisterRedisStream("todo.events", "todo_cache", nil)
+	registry.RegisterRedisStream("todo:events", "todo_cache", []string{"todo-consumer-group"})
+	registry.RegisterRedisStream("files:events", "file_cache", nil)
 
 	log.Println("BeeORM initialized successfully")
 }
