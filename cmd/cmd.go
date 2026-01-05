@@ -12,16 +12,19 @@ import (
 	"syscall"
 	"time"
 	graphqlH "todo-service/internal/api/graphql/handler"
-
-	"todo-service/internal/background"
-	"todo-service/internal/infrastructure/migration"
 	"todo-service/internal/worker"
+
+	// "todo-service/internal/background/eventconsumer"
+	"todo-service/internal/background/eventconsumer"
+	// pe "todo-service/internal/background/publish-event"
+	"todo-service/internal/infrastructure/migration"
 
 	// "todo-service/internal/infrastructure/repository"
 	"todo-service/internal/infrastructure/storage"
 	fileUseCase "todo-service/internal/usecase/file"
 	todoUseCase "todo-service/internal/usecase/todo"
 
+	// "git.ice.global/packages/beeorm/v4"
 	"git.ice.global/packages/hitrix"
 	"git.ice.global/packages/hitrix/pkg/middleware"
 	"git.ice.global/packages/hitrix/service"
@@ -37,6 +40,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 
 	beeORMentity "todo-service/internal/repository/beeorm"
+	"todo-service/internal/repository/beeorm/entity"
 	beeORMRepo "todo-service/internal/repository/beeorm/repository"
 	fileRepo "todo-service/internal/repository/file"
 	redisSearch "todo-service/internal/repository/search/redis"
@@ -49,8 +53,10 @@ func cmd() {
 	s, deferFunc := hitrix.New(
 		"todo-app", "your secret",
 	).RegisterDIGlobalService(
+		registry.ServiceProviderConfigDirectory("./config"), // without docker
+		registry.ServiceProviderUUID(),
 		registry.ServiceProviderErrorLogger(),
-		registry.ServiceProviderConfigDirectory("/app/config"),
+		// registry.ServiceProviderConfigDirectory("/app/config"), for docker
 		registry.ServiceProviderOrmRegistry(beeORMentity.Init),
 		registry.ServiceProviderOrmEngine(),
 		registry.ServiceProviderJWT(),
@@ -103,6 +109,17 @@ func cmd() {
 	log.Info().Msg("Migrations completed successfully")
 
 	ormengine := service.DI().OrmEngine()
+
+	schema := ormengine.GetRegistry().GetTableSchemaForEntity(&entity.TodoEntity{})
+
+	// search := ormengine.GetRedisSearch("todo_cache")
+	// search.Query("FT.DROPINDEX", "entity.TodoEntity")
+
+	schema.UpdateSchema(ormengine)
+
+	schema.ReindexRedisSearchIndex(ormengine)
+
+	fmt.Println("RedisSearch index is ready!")
 
 	alters := ormengine.GetAlters()
 	for _, alter := range alters {
@@ -189,6 +206,14 @@ func cmd() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
+	go func() {
+		log.Info().Msg("Starting background processes...")
+		s.RunBackgroundProcess(func(b *hitrix.BackgroundProcessor) {
+			// b.RunScript(&pe.PublishEvent{})
+			b.RunScript(&eventconsumer.EventConsumer{})
+		})
+	}()
+
 	// Start server in goroutine
 	go func() {
 		log.Info().Msgf("GraphQL server starting on :%s", APP_PORT)
@@ -211,9 +236,7 @@ func cmd() {
 
 	}()
 
-	s.RunBackgroundProcess(func(b *hitrix.BackgroundProcessor) {
-		b.RunScript(&background.EventConsumer{})
-	})
+	
 
 	// Wait for shutdown signal
 	<-quit

@@ -24,7 +24,7 @@ func NewOutboxProcessor(engine *beeorm.Engine) *OutboxProcessor {
 func (p *OutboxProcessor) Start(ctx context.Context) {
 	log.Println("📦 Outbox processor started...")
 
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {

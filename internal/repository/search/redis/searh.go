@@ -8,7 +8,7 @@ import (
 
 	"todo-service/internal/domain/entity"
 	beeORMentity "todo-service/internal/repository/beeorm/entity"
-	"todo-service/internal/repository/beeorm/mapper"
+	// "todo-service/internal/repository/beeorm/mapper"
 )
 
 type RedisSearchService struct {
@@ -23,31 +23,50 @@ func NewRedisSearchService(engine *beeorm.Engine) *RedisSearchService {
 
 // Search todos by query
 func (s *RedisSearchService) SearchTodos(ctx context.Context, query string, offset, limit int) ([]*entity.TodoItem, error) {
-	searchQuery := beeorm.NewRedisSearchQuery()
-
-	searchQuery.Query("@Description:(" + query + ")")
-
-	// var todos []*entity.TodoItem
-
-	pager := beeorm.NewPager(offset, limit)
-
-	var models []*beeORMentity.TodoEntity
-
-	totalRows := s.engine.RedisSearch(models, searchQuery, pager)
-
-	fmt.Printf("Total found: %d\n", totalRows)
-
-	if models != nil {
-		// Convert to domain entities
-		entities := make([]*entity.TodoItem, len(models))
-
-		for i, m := range models {
-			entities[i] = mapper.ToEntity(m)
-		}
+	// ১. ভ্যালিডেশন
+	if limit <= 0 {
+		limit = 10
+	}
+	if offset < 0 {
+		offset = 0
 	}
 
-	return nil, fmt.Errorf("slice is nil or no data found %+v", "issue####")
+	var entities []*beeORMentity.TodoEntity
+	pager := beeorm.NewPager(offset, limit)
+	searchQuery := beeorm.NewRedisSearchQuery()
 
+	if query == "" || query == "*" {
+		searchQuery.Query("*")
+	} else {
+		searchQuery.FilterString("Description", query)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Recovered from BeeORM panic: %v\n", r)
+		}
+	}()
+
+	if s.engine == nil {
+		return nil, fmt.Errorf("orm engine is nil")
+	}
+
+	fmt.Printf("Debug: Offset=%d, Limit=%d, Query=%s\n", offset, limit, query)
+
+	totalRows := s.engine.RedisSearch(&entities, searchQuery, pager)
+	fmt.Println("✅ Success! Redis Search found totalRows: ", totalRows)
+
+	var results []*entity.TodoItem
+	for _, row := range entities {
+		results = append(results, &entity.TodoItem{
+			ID:          int(row.ID),
+			Description: row.Description,
+			// DueDate:     row.DueDate.Format("2006-01-02"),
+			// CreatedAt:   row.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
+	return results, nil
 }
 
 // Create Todo search index

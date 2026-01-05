@@ -1,4 +1,4 @@
-package background
+package eventconsumer
 
 import (
 	"context"
@@ -11,6 +11,8 @@ import (
 	"git.ice.global/packages/beeorm/v4"
 	"git.ice.global/packages/hitrix/service"
 	"git.ice.global/packages/hitrix/service/component/app"
+
+	beeOrmEnity "todo-service/internal/repository/beeorm/entity"
 )
 
 type EventConsumer struct{}
@@ -49,14 +51,15 @@ func (script *EventConsumer) Run(ctx context.Context, exit app.IExit) {
 		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 		for _, event := range events {
-			fmt.Printf("📦 Event ID: %s\n", event.ID())
+			fmt.Printf("📦 consumer Event ID: %s\n", event.ID())
 
 			var fullPayload map[string]interface{}
 			event.Unserialize(&fullPayload)
 
 			payloadString, ok := fullPayload["payload"].(string)
 			if !ok {
-				fmt.Println("❌ Payload is not a string")
+				fmt.Println("❌ consumer Payload is not a string")
+				fmt.Printf("consumer: data %+v\n", consumer)
 				continue
 			}
 
@@ -71,11 +74,18 @@ func (script *EventConsumer) Run(ctx context.Context, exit app.IExit) {
 			fmt.Printf("✅ EventConsumer DueDate: %v\n", data["dueDate"])
 			fmt.Printf("✅ EventConsumer id: %v\n", data["id"])
 
+			todoID := uint64(data["id"].(float64))
+			todo := &beeOrmEnity.TodoEntity{}
+
+			if engine.LoadByID(todoID, todo) {
+				engine.Flush(todo)
+			}
+			// TODO: send redis search
 			event.Ack()
 		}
 
 		fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-		fmt.Println("✅ All events processed")
+		fmt.Println("✅ All consumer events processed")
 	})
 
 	fmt.Println("🛑 Event consumer stopped")
