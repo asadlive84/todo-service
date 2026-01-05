@@ -22,15 +22,15 @@ func NewOutboxProcessor(engine *beeorm.Engine) *OutboxProcessor {
 }
 
 func (p *OutboxProcessor) Start(ctx context.Context) {
-	log.Println("📦 Outbox processor started...")
+	log.Println(" Outbox processor started...")
 
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("📦 Outbox processor stopped")
+			log.Println(" Outbox processor stopped")
 			return
 
 		case <-ticker.C:
@@ -42,7 +42,7 @@ func (p *OutboxProcessor) Start(ctx context.Context) {
 func (p *OutboxProcessor) processEvents(ctx context.Context) {
 	// Context check
 	if err := ctx.Err(); err != nil {
-		log.Printf("⚠️ Context cancelled: %v", err)
+		log.Printf(" Context cancelled: %v", err)
 		return
 	}
 
@@ -51,7 +51,6 @@ func (p *OutboxProcessor) processEvents(ctx context.Context) {
 	where := beeorm.NewWhere("Status IN (?, ?)", "pending", "failed")
 	pager := beeorm.NewPager(1, 50)
 
-	// ✅ Pass pointer to slice (&events)
 	p.engine.Search(where, pager, &events)
 
 	if len(events) == 0 {
@@ -59,26 +58,26 @@ func (p *OutboxProcessor) processEvents(ctx context.Context) {
 		return
 	}
 
-	log.Printf("📦 Processing %d pending events...", len(events))
+	log.Printf(" Processing %d pending events...", len(events))
 
 	// Process each event
 	for _, event := range events {
 		// Context check per event
 		if err := ctx.Err(); err != nil {
-			log.Printf("⚠️ Context cancelled, stopping processing")
+			log.Printf("Context cancelled, stopping processing")
 			return
 		}
 
 		if err := p.publishEvent(ctx, event); err != nil {
-			log.Printf("❌ Failed to publish event %d: %v", event.ID, err)
+			log.Printf(" Failed to publish event %d: %v", event.ID, err)
 			p.markAsFailed(event, err)
 		} else {
-			log.Printf("✅ Published event %d (type: %s)", event.ID, event.EventType)
+			log.Printf("Published event %d (type: %s)", event.ID, event.EventType)
 			p.markAsPublished(event)
 		}
 	}
 
-	log.Printf("✅ Completed processing %d events", len(events))
+	log.Printf("Completed processing %d events", len(events))
 }
 
 // Helper: Mark as failed
@@ -88,7 +87,7 @@ func (p *OutboxProcessor) markAsFailed(event *beeOrmEnity.OutboxEntity, err erro
 	// event.LastError = err.Error()
 
 	if flushErr := p.engine.FlushWithCheck(event); flushErr != nil {
-		log.Printf("⚠️ Failed to update event %d status: %v", event.ID, flushErr)
+		log.Printf("Failed to update event %d status: %v", event.ID, flushErr)
 	}
 }
 
@@ -99,7 +98,7 @@ func (p *OutboxProcessor) markAsPublished(event *beeOrmEnity.OutboxEntity) {
 	event.PublishedAt = now
 
 	if err := p.engine.FlushWithCheck(event); err != nil {
-		log.Printf("⚠️ Failed to update event %d status: %v", event.ID, err)
+		log.Printf("Failed to update event %d status: %v", event.ID, err)
 	}
 }
 

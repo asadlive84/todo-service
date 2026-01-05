@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"git.ice.global/packages/beeorm/v4"
 
@@ -23,7 +24,12 @@ func NewRedisSearchService(engine *beeorm.Engine) *RedisSearchService {
 
 // Search todos by query
 func (s *RedisSearchService) SearchTodos(ctx context.Context, query string, offset, limit int) ([]*entity.TodoItem, error) {
-	// ১. ভ্যালিডেশন
+
+	fmt.Println("=======start search@@@")
+	SearchMyData(s.engine, query)
+	fmt.Println("=======end search@@")
+
+	// search := s.engine.GetRedisSearch("todo_cache")
 	if limit <= 0 {
 		limit = 10
 	}
@@ -31,15 +37,18 @@ func (s *RedisSearchService) SearchTodos(ctx context.Context, query string, offs
 		offset = 0
 	}
 
+	page := (offset / limit) + 1
 	var entities []*beeORMentity.TodoEntity
-	pager := beeorm.NewPager(offset, limit)
+	pager := beeorm.NewPager(1, 10)
 	searchQuery := beeorm.NewRedisSearchQuery()
 
-	if query == "" || query == "*" {
-		searchQuery.Query("*")
-	} else {
-		searchQuery.FilterString("Description", query)
-	}
+	searchQuery.Query("@Description:(" + query + "*)") // Description ফিল্ডে সার্চ করা হচ্ছে
+
+	// if query == "" || query == "*" {
+	// 	searchQuery.Query("*")
+	// } else {
+	// 	searchQuery.FilterString("Description", query)
+	// }
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -51,10 +60,10 @@ func (s *RedisSearchService) SearchTodos(ctx context.Context, query string, offs
 		return nil, fmt.Errorf("orm engine is nil")
 	}
 
-	fmt.Printf("Debug: Offset=%d, Limit=%d, Query=%s\n", offset, limit, query)
+	fmt.Printf("Debug: Offset=%d, Limit=%d, Query=%s, Page=%+v\n", offset, limit, query, page)
 
-	totalRows := s.engine.RedisSearch(&entities, searchQuery, pager)
-	fmt.Println("✅ Success! Redis Search found totalRows: ", totalRows)
+	totalRows := s.engine.RedisSearch(&entities, searchQuery, pager, "")
+	fmt.Println("Success! Redis Search found totalRows: ", totalRows)
 
 	var results []*entity.TodoItem
 	for _, row := range entities {
@@ -67,6 +76,78 @@ func (s *RedisSearchService) SearchTodos(ctx context.Context, query string, offs
 	}
 
 	return results, nil
+}
+
+func SearchMyData1(engine *beeorm.Engine, searchText string) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Recovered from SearchMyData panic: %v\n", r)
+		}
+	}()
+
+	schema := engine.GetRegistry().GetTableSchemaForEntity(&beeORMentity.TodoEntity{})
+
+	search, has := schema.GetRedisSearch(engine)
+	if !has {
+		log.Fatal("RedisSearch is not configured for this entity")
+		return
+	}
+
+	indexName := schema.GetTableName()
+
+	fmt.Println("=================SearchMyData indexName:: ", indexName)
+
+	query := &beeorm.RedisSearchQuery{}
+
+	if searchText == "" {
+		query.Query("*")
+	} else {
+		query.Query("@Description:" + searchText + "*")
+	}
+
+	// indexName = "e3cf3"
+	indexName = "entity.TodoEntity"
+
+	total, keys := search.SearchKeys(indexName, query, beeorm.NewPager(1, 10))
+
+	fmt.Printf("🔍 Total Results: %d\n", total)
+	fmt.Printf("🔑 Redis Keys: %v\n", keys)
+}
+
+func SearchMyData(engine *beeorm.Engine, searchText string) {
+	schema := engine.GetRegistry().GetTableSchemaForEntity(&beeORMentity.TodoEntity{})
+
+	indexName := "entity.TodoEntity"
+
+	search, _ := schema.GetRedisSearch(engine)
+
+	query := &beeorm.RedisSearchQuery{}
+
+	if searchText == "" {
+		query.Query("*")
+	} else {
+		// format: @Description:*sohel* query.Query("@Description:*" + searchText + "*")
+		query.Query("@Description:" + searchText + "*")
+	}
+
+	pager := beeorm.NewPager(1, 10)
+
+	// var rows []*beeORMentity.TodoEntity
+
+	total, keys := search.Search(indexName, query, pager)
+
+	fmt.Printf("======= start search results =======\n")
+	fmt.Printf("🔍 Total Results Found: %d\n", total)
+	fmt.Printf("🔑 Redis Keys: %v\n", keys)
+
+	for _, key := range keys {
+		fmt.Printf("📌 Found Todo ID Key: %s\n", key)
+	}
+
+	// for _, item := range keys {
+	// 	fmt.Printf("ID: %d, Description: %s\n", item.ID, item.Description)
+	// }
+	fmt.Printf("======= end search results =======\n")
 }
 
 // Create Todo search index
