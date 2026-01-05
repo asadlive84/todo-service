@@ -110,15 +110,6 @@ func cmd() {
 
 	ormengine := service.DI().OrmEngine()
 
-	// schema := ormengine.GetRegistry().GetTableSchemaForEntity(&entity.TodoEntity{})
-
-	// search := ormengine.GetRedisSearch("todo_cache")
-	// search.Query("FT.DROPINDEX", "entity.TodoEntity")
-
-	// schema.UpdateSchema(ormengine)
-
-	// schema.ReindexRedisSearchIndex(ormengine)
-
 	fmt.Println("RedisSearch index is ready!")
 
 	alters := ormengine.GetAlters()
@@ -165,9 +156,7 @@ func cmd() {
 
 	go processor.Start(ctx)
 
-	// StartBackgroundWorker(ormengine)
 	fmt.Println("==========InitSearchIndex=============")
-	// InitSearchIndex2(ormengine)
 	InitSearchIndex(ormengine)
 	RunSearchConsumer(ormengine)
 
@@ -269,18 +258,6 @@ func gqlSetup(srv *handler.Server) {
 
 }
 
-// func InitSearchIndex(engine *beeorm.Engine) {
-// 	schema := engine.GetRegistry().GetTableSchemaForEntity(&entity.TodoEntity{})
-
-// 	schema.ReindexRedisSearchIndex(engine)
-
-// 	log.Print("RedisSearch Index has been re-created automatically!")
-
-// 	engine.GetRegistry().GetTableSchemaForEntity(&entity.TodoEntity{}).ReindexRedisSearchIndex(engine)
-
-// 	log.Print("RedisSearch index is ready!")
-// }
-
 func InitSearchIndex(engine *beeorm.Engine) {
 	schema := engine.GetRegistry().GetTableSchemaForEntity(&entity.TodoEntity{})
 
@@ -294,7 +271,7 @@ func InitSearchIndex(engine *beeorm.Engine) {
 
 	schema.ReindexRedisSearchIndex(engine)
 
-	log.Print("✅ RedisSearch index is synced and ready!")
+	log.Print("RedisSearch index is synced and ready!")
 }
 func RunSearchConsumer(engine *beeorm.Engine) {
 	consumer := beeorm.NewBackgroundConsumer(engine)
